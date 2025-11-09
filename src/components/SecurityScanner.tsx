@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Shield, AlertTriangle, CheckCircle, XCircle, Search, Globe, Lock, Eye, Clock, Zap, Mail, Cpu, Target, Scan, Activity, Bug, MessageCircle, CreditCard, DollarSign } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, XCircle, Search, Globe, Lock, Eye, Clock, Zap, Mail, Cpu, Target, Scan, Activity, Bug, MessageCircle, CreditCard, DollarSign, BarChart3 } from 'lucide-react';
 import unmaskLogo from '@/assets/unmask-logo-new.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { useNavigate } from 'react-router-dom';
 
 /// <reference types="chrome" />
 
@@ -47,6 +48,7 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
   const [paymentResult, setPaymentResult] = useState<any>(null);
   const [progress, setProgress] = useState(0);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const scanUrl = async () => {
     if (!currentUrl) {
@@ -310,8 +312,16 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
           <p className="text-xl text-muted-foreground">
             Sistema inteligente de detecção de ameaças digitais
           </p>
-          <div className="flex justify-center mt-4">
+          <div className="flex justify-center mt-4 space-x-3">
             <ThemeToggle />
+            <Button
+              onClick={() => navigate('/dashboard')}
+              variant="outline"
+              className="border-primary/30 text-primary hover:bg-primary/10"
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Dashboard de Crimes
+            </Button>
           </div>
           <div className="flex items-center justify-center space-x-6 text-sm text-muted-foreground">
             <div className="flex items-center space-x-1">

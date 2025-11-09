@@ -14,7 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      cyber_crimes: {
+        Row: {
+          attack_vector: string | null
+          created_at: string
+          crime_type: string
+          description: string | null
+          detected_at: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          resolved_at: string | null
+          severity: string
+          source_country: string | null
+          status: string
+          target_country: string | null
+          target_type: string | null
+        }
+        Insert: {
+          attack_vector?: string | null
+          created_at?: string
+          crime_type: string
+          description?: string | null
+          detected_at?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          resolved_at?: string | null
+          severity: string
+          source_country?: string | null
+          status?: string
+          target_country?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          attack_vector?: string | null
+          created_at?: string
+          crime_type?: string
+          description?: string | null
+          detected_at?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          resolved_at?: string | null
+          severity?: string
+          source_country?: string | null
+          status?: string
+          target_country?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
