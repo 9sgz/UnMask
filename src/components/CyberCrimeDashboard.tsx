@@ -11,6 +11,8 @@ import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { useRealtimeAlerts } from '@/hooks/useRealtimeAlerts';
+import { AlertIndicator } from './AlertIndicator';
 
 const CyberAttackMap = lazy(() => import('./CyberAttackMap'));
 
@@ -40,6 +42,7 @@ export const CyberCrimeDashboard = () => {
   const [crimes, setCrimes] = useState<CyberCrime[]>([]);
   const [period, setPeriod] = useState<TimePeriod>('week');
   const [loading, setLoading] = useState(true);
+  const { requestNotificationPermission } = useRealtimeAlerts();
 
   useEffect(() => {
     fetchCrimes();
@@ -185,8 +188,12 @@ export const CyberCrimeDashboard = () => {
             </p>
           </div>
 
-          {/* Period Filter */}
-          <div className="flex items-center gap-2 bg-muted/50 p-1 rounded-lg border border-border">
+          <div className="flex items-center gap-3">
+            {/* Alert Indicator */}
+            <AlertIndicator onEnableNotifications={requestNotificationPermission} />
+
+            {/* Period Filter */}
+            <div className="flex items-center gap-2 bg-muted/50 p-1 rounded-lg border border-border">
             <Filter className="w-4 h-4 text-muted-foreground ml-2" />
             {(['day', 'week', 'month', 'semester', 'year'] as TimePeriod[]).map((p) => (
               <Button
@@ -199,6 +206,7 @@ export const CyberCrimeDashboard = () => {
                 {getPeriodLabel(p)}
               </Button>
             ))}
+            </div>
           </div>
         </div>
 
