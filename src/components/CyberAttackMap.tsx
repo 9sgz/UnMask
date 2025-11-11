@@ -6,6 +6,12 @@ import {
   Line,
   Marker,
 } from 'react-simple-maps';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface CyberCrime {
   id: string;
@@ -13,6 +19,8 @@ interface CyberCrime {
   target_country: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
   status: 'active' | 'mitigated' | 'resolved';
+  crime_type: string;
+  ip_address?: string;
 }
 
 interface CyberAttackMapProps {
@@ -64,6 +72,10 @@ const CyberAttackMap = memo(({ crimes }: CyberAttackMapProps) => {
     end: [number, number];
     severity: string;
     opacity: number;
+    crimeType: string;
+    sourceCountry: string;
+    targetCountry: string;
+    ipAddress: string;
   }>>([]);
 
   useEffect(() => {
@@ -80,6 +92,10 @@ const CyberAttackMap = memo(({ crimes }: CyberAttackMapProps) => {
         end: countryCoordinates[crime.target_country],
         severity: crime.severity,
         opacity: 1,
+        crimeType: crime.crime_type,
+        sourceCountry: crime.source_country,
+        targetCountry: crime.target_country,
+        ipAddress: crime.ip_address || 'N/A',
       }));
 
     setActiveAttacks(attacks);
@@ -128,15 +144,16 @@ const CyberAttackMap = memo(({ crimes }: CyberAttackMapProps) => {
   };
 
   return (
-    <div className="relative w-full h-full">
-      <ComposableMap
-        projection="geoMercator"
-        projectionConfig={{
-          scale: 147,
-          center: [0, 20],
-        }}
-        className="w-full h-full"
-      >
+    <TooltipProvider>
+      <div className="relative w-full h-full">
+        <ComposableMap
+          projection="geoMercator"
+          projectionConfig={{
+            scale: 147,
+            center: [0, 20],
+          }}
+          className="w-full h-full"
+        >
         <Geographies geography={geoUrl}>
           {({ geographies }) =>
             geographies.map((geo) => (
@@ -158,18 +175,45 @@ const CyberAttackMap = memo(({ crimes }: CyberAttackMapProps) => {
 
         {/* Linhas de ataque */}
         {activeAttacks.map((attack) => (
-          <Line
-            key={attack.id}
-            from={attack.start}
-            to={attack.end}
-            stroke={getSeverityColor(attack.severity)}
-            strokeWidth={getSeverityWidth(attack.severity)}
-            strokeLinecap="round"
-            opacity={attack.opacity}
-            style={{
-              transition: 'opacity 1.5s ease-in-out',
-            }}
-          />
+          <Tooltip key={attack.id}>
+            <TooltipTrigger asChild>
+              <g style={{ cursor: 'pointer' }}>
+                <Line
+                  from={attack.start}
+                  to={attack.end}
+                  stroke={getSeverityColor(attack.severity)}
+                  strokeWidth={getSeverityWidth(attack.severity)}
+                  strokeLinecap="round"
+                  opacity={attack.opacity}
+                  style={{
+                    transition: 'opacity 1.5s ease-in-out',
+                  }}
+                />
+              </g>
+            </TooltipTrigger>
+            <TooltipContent className="bg-card border-border">
+              <div className="space-y-1">
+                <p className="font-semibold text-foreground">{attack.crimeType}</p>
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium">Origem:</span> {attack.sourceCountry}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium">Destino:</span> {attack.targetCountry}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium">IP:</span> {attack.ipAddress}
+                </p>
+                <p className="text-xs">
+                  <span className="font-medium">Severidade:</span>{' '}
+                  <span style={{ color: getSeverityColor(attack.severity) }}>
+                    {attack.severity === 'critical' ? 'Crítico' : 
+                     attack.severity === 'high' ? 'Alto' :
+                     attack.severity === 'medium' ? 'Médio' : 'Baixo'}
+                  </span>
+                </p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
         ))}
 
         {/* Marcadores nos pontos de origem */}
@@ -209,9 +253,9 @@ const CyberAttackMap = memo(({ crimes }: CyberAttackMapProps) => {
             />
           </Marker>
         ))}
-      </ComposableMap>
+        </ComposableMap>
 
-      {/* Legenda */}
+        {/* Legenda */}
       <div className="absolute bottom-4 left-4 bg-card/95 backdrop-blur-sm border border-border rounded-lg p-3 space-y-2">
         <p className="text-xs font-semibold text-foreground mb-2">Severidade</p>
         <div className="flex items-center gap-2">
@@ -232,12 +276,13 @@ const CyberAttackMap = memo(({ crimes }: CyberAttackMapProps) => {
         </div>
       </div>
 
-      {/* Contador de ataques ativos */}
-      <div className="absolute top-4 right-4 bg-card/95 backdrop-blur-sm border border-border rounded-lg p-3">
-        <p className="text-xs text-muted-foreground">Ataques Ativos</p>
-        <p className="text-2xl font-bold text-danger">{activeAttacks.length}</p>
+        {/* Contador de ataques ativos */}
+        <div className="absolute top-4 right-4 bg-card/95 backdrop-blur-sm border border-border rounded-lg p-3">
+          <p className="text-xs text-muted-foreground">Ataques Ativos</p>
+          <p className="text-2xl font-bold text-danger">{activeAttacks.length}</p>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 });
 
