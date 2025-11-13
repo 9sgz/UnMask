@@ -211,3 +211,12 @@ All colors MUST be HSL.
 .animate-scan-wave {
   animation: scan-wave 2s ease-in-out infinite;
 }
+
+@keyframes dashOffset {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 30;
+  }
+}

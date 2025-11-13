@@ -12,6 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { supabase } from '@/integrations/supabase/client';
 
 interface CyberCrime {
   id: string;
@@ -76,17 +77,68 @@ const CyberAttackMap = memo(({ crimes }: CyberAttackMapProps) => {
     sourceCountry: string;
     targetCountry: string;
     ipAddress: string;
+    animationDelay: number;
   }>>([]);
+  const [allCrimes, setAllCrimes] = useState<CyberCrime[]>(crimes);
+
+  useEffect(() => {
+    // Fetch inicial de todos os crimes ativos
+    const fetchActiveCrimes = async () => {
+      const { data, error } = await supabase
+        .from('cyber_crimes')
+        .select('*')
+        .eq('status', 'active');
+      
+      if (data && !error) {
+        setAllCrimes(data as CyberCrime[]);
+      }
+    };
+
+    fetchActiveCrimes();
+
+    // Subscrever a mudanças em tempo real
+    const channel = supabase
+      .channel('cyber-attacks-map')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'cyber_crimes',
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newCrime = payload.new as CyberCrime;
+            if (newCrime.status === 'active') {
+              setAllCrimes(prev => [...prev, newCrime]);
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedCrime = payload.new as CyberCrime;
+            setAllCrimes(prev => 
+              prev.map(crime => crime.id === updatedCrime.id ? updatedCrime : crime)
+                .filter(crime => crime.status === 'active')
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setAllCrimes(prev => prev.filter(crime => crime.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   useEffect(() => {
     // Filtrar apenas ataques ativos e com coordenadas válidas
-    const attacks = crimes
+    const attacks = allCrimes
       .filter(crime => 
         crime.status === 'active' &&
         countryCoordinates[crime.source_country] &&
         countryCoordinates[crime.target_country]
       )
-      .map(crime => ({
+      .map((crime, index) => ({
         id: crime.id,
         start: countryCoordinates[crime.source_country],
         end: countryCoordinates[crime.target_country],
@@ -96,6 +148,7 @@ const CyberAttackMap = memo(({ crimes }: CyberAttackMapProps) => {
         sourceCountry: crime.source_country,
         targetCountry: crime.target_country,
         ipAddress: crime.ip_address || 'N/A',
+        animationDelay: index * 0.2,
       }));
 
     setActiveAttacks(attacks);
@@ -105,13 +158,13 @@ const CyberAttackMap = memo(({ crimes }: CyberAttackMapProps) => {
       setActiveAttacks(prev => 
         prev.map(attack => ({
           ...attack,
-          opacity: Math.random() * 0.5 + 0.5, // Opacidade entre 0.5 e 1
+          opacity: Math.random() * 0.5 + 0.5,
         }))
       );
     }, 1500);
 
     return () => clearInterval(interval);
-  }, [crimes]);
+  }, [allCrimes]);
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
@@ -187,6 +240,9 @@ const CyberAttackMap = memo(({ crimes }: CyberAttackMapProps) => {
                   opacity={attack.opacity}
                   style={{
                     transition: 'opacity 1.5s ease-in-out',
+                    animation: `dashOffset 3s linear infinite`,
+                    animationDelay: `${attack.animationDelay}s`,
+                    strokeDasharray: '10 5',
                   }}
                 />
               </g>
@@ -216,42 +272,67 @@ const CyberAttackMap = memo(({ crimes }: CyberAttackMapProps) => {
           </Tooltip>
         ))}
 
-        {/* Marcadores nos pontos de origem */}
+        {/* Marcadores nos pontos de origem e destino */}
         {activeAttacks.map((attack) => (
-          <Marker key={`source-${attack.id}`} coordinates={attack.start}>
-            <circle
-              r={4}
-              fill={getSeverityColor(attack.severity)}
-              opacity={attack.opacity}
-              style={{
-                transition: 'opacity 1.5s ease-in-out',
-              }}
-            />
-          </Marker>
-        ))}
+          <>
+            {/* Marcador de origem com pulso */}
+            <Marker key={`source-${attack.id}`} coordinates={attack.start}>
+              <g>
+                <circle
+                  r={8}
+                  fill={getSeverityColor(attack.severity)}
+                  opacity={0.2}
+                  className="animate-ping"
+                  style={{
+                    animationDelay: `${attack.animationDelay}s`,
+                    animationDuration: '2s',
+                  }}
+                />
+                <circle
+                  r={4}
+                  fill={getSeverityColor(attack.severity)}
+                  opacity={attack.opacity}
+                  style={{
+                    transition: 'opacity 1.5s ease-in-out',
+                  }}
+                />
+              </g>
+            </Marker>
 
-        {/* Marcadores nos pontos de destino */}
-        {activeAttacks.map((attack) => (
-          <Marker key={`target-${attack.id}`} coordinates={attack.end}>
-            <circle
-              r={5}
-              fill={getSeverityColor(attack.severity)}
-              opacity={attack.opacity * 0.8}
-              style={{
-                transition: 'opacity 1.5s ease-in-out',
-              }}
-            />
-            <circle
-              r={8}
-              fill="none"
-              stroke={getSeverityColor(attack.severity)}
-              strokeWidth={2}
-              opacity={attack.opacity * 0.4}
-              style={{
-                transition: 'opacity 1.5s ease-in-out',
-              }}
-            />
-          </Marker>
+            {/* Marcador de destino com pulso */}
+            <Marker key={`target-${attack.id}`} coordinates={attack.end}>
+              <g>
+                <circle
+                  r={8}
+                  fill={getSeverityColor(attack.severity)}
+                  opacity={0.2}
+                  className="animate-ping"
+                  style={{
+                    animationDelay: `${attack.animationDelay + 0.5}s`,
+                    animationDuration: '2s',
+                  }}
+                />
+                <circle
+                  r={5}
+                  fill={getSeverityColor(attack.severity)}
+                  opacity={attack.opacity * 0.8}
+                  style={{
+                    transition: 'opacity 1.5s ease-in-out',
+                  }}
+                />
+                <circle
+                  r={8}
+                  fill="none"
+                  stroke={getSeverityColor(attack.severity)}
+                  strokeWidth={2}
+                  opacity={attack.opacity * 0.4}
+                  style={{
+                    transition: 'opacity 1.5s ease-in-out',
+                  }}
+                />
+              </g>
+            </Marker>
+          </>
         ))}
         </ComposableMap>
 
