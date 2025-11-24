@@ -13,6 +13,7 @@ import {
 } from 'recharts';
 import { useRealtimeAlerts } from '@/hooks/useRealtimeAlerts';
 import { AlertIndicator } from './AlertIndicator';
+import { AttackFeed } from './AttackFeed';
 
 const CyberAttackMap = lazy(() => import('./CyberAttackMap'));
 
@@ -253,25 +254,31 @@ export const CyberCrimeDashboard = () => {
           </Card>
         </div>
 
-        {/* Mapa Mundial */}
-        <Card className="p-6 border-border">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-primary" />
-            Mapa de Ataques em Tempo Real
-          </h3>
-          <div className="h-[500px] rounded-lg overflow-hidden bg-muted/20">
-            <Suspense fallback={
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="text-center">
-                  <Activity className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Carregando mapa...</p>
+        {/* Mapa Mundial e Feed de Ataques */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <Card className="p-6 border-border lg:col-span-3">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-primary" />
+              Mapa de Ataques em Tempo Real
+            </h3>
+            <div className="h-[500px] rounded-lg overflow-hidden bg-muted/20">
+              <Suspense fallback={
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="text-center">
+                    <Activity className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Carregando mapa...</p>
+                  </div>
                 </div>
-              </div>
-            }>
-              <CyberAttackMap crimes={crimes} />
-            </Suspense>
+              }>
+                <CyberAttackMap crimes={crimes} />
+              </Suspense>
+            </div>
+          </Card>
+
+          <div className="h-[572px]">
+            <AttackFeed />
           </div>
-        </Card>
+        </div>
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
