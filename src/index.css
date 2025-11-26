@@ -220,3 +220,29 @@ All colors MUST be HSL.
     stroke-dashoffset: 30;
   }
 }
+
+@keyframes ticker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-wrapper {
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+  padding: 0.5rem 0;
+}
+
+.ticker-content {
+  display: flex;
+  white-space: nowrap;
+  animation: ticker 30s linear infinite;
+}
+
+.ticker-item {
+  display: inline-block;
+}

@@ -14,6 +14,7 @@ import {
 import { useRealtimeAlerts } from '@/hooks/useRealtimeAlerts';
 import { AlertIndicator } from './AlertIndicator';
 import { AttackFeed } from './AttackFeed';
+import { CodeTicker } from './CodeTicker';
 
 const CyberAttackMap = lazy(() => import('./CyberAttackMap'));
 
@@ -176,6 +177,7 @@ export const CyberCrimeDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background p-6">
+      <CodeTicker />
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
