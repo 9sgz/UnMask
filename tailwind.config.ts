@@ -110,12 +110,12 @@ export default {
 					from: { height: 'var(--radix-accordion-content-height)' },
 					to: { height: '0' }
 				},
-				'pulse-glow': {
+			'pulse-glow': {
 					'0%, 100%': {
-						boxShadow: '0 0 5px hsl(160 100% 45% / 0.5), 0 0 20px hsl(160 100% 45% / 0.3)'
+						boxShadow: '0 0 5px hsl(210 100% 55% / 0.5), 0 0 20px hsl(210 100% 55% / 0.3)'
 					},
 					'50%': {
-						boxShadow: '0 0 10px hsl(160 100% 45% / 0.7), 0 0 30px hsl(160 100% 45% / 0.5), 0 0 50px hsl(160 100% 45% / 0.3)'
+						boxShadow: '0 0 10px hsl(210 100% 55% / 0.7), 0 0 30px hsl(210 100% 55% / 0.5), 0 0 50px hsl(210 100% 55% / 0.3)'
 					}
 				},
 				'float': {
