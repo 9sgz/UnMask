@@ -15,16 +15,16 @@
     --popover: 220 20% 100%;
     --popover-foreground: 220 20% 10%;
 
-    --primary: 160 100% 45%;
+    --primary: 210 100% 55%;
     --primary-foreground: 220 20% 5%;
 
-    --secondary: 280 100% 60%;
+    --secondary: 260 100% 65%;
     --secondary-foreground: 0 0% 100%;
 
     --muted: 220 15% 92%;
     --muted-foreground: 220 10% 45%;
 
-    --accent: 200 100% 50%;
+    --accent: 190 100% 50%;
     --accent-foreground: 220 20% 5%;
 
     --destructive: 0 85% 60%;
@@ -32,14 +32,14 @@
 
     --border: 220 15% 88%;
     --input: 220 15% 88%;
-    --ring: 160 100% 45%;
+    --ring: 210 100% 55%;
 
-    /* Cyber Colors */
+    /* Cyber Colors - Blue Theme */
     --cyber-green: 160 100% 45%;
-    --cyber-cyan: 180 100% 50%;
+    --cyber-cyan: 190 100% 50%;
     --cyber-pink: 320 100% 60%;
-    --cyber-purple: 280 100% 60%;
-    --cyber-blue: 200 100% 50%;
+    --cyber-purple: 260 100% 65%;
+    --cyber-blue: 210 100% 55%;
     --cyber-yellow: 50 100% 50%;
     --cyber-orange: 25 100% 55%;
     --cyber-red: 0 100% 55%;
@@ -57,7 +57,7 @@
     --warning-foreground: 220 20% 5%;
     --warning-glow: 50 100% 50%;
     
-    --scanning: 200 100% 50%;
+    --scanning: 210 100% 55%;
     --scanning-foreground: 220 20% 5%;
 
     --radius: 0.5rem;
@@ -69,46 +69,72 @@
     --sidebar-accent: 220 15% 92%;
     --sidebar-accent-foreground: 220 20% 10%;
     --sidebar-border: 220 15% 88%;
-    --sidebar-ring: 160 100% 45%;
+    --sidebar-ring: 210 100% 55%;
   }
 
   .dark {
-    --background: 220 25% 6%;
-    --foreground: 160 100% 90%;
+    --background: 220 30% 6%;
+    --foreground: 210 100% 90%;
 
-    --card: 220 25% 10%;
-    --card-foreground: 160 100% 90%;
+    --card: 220 30% 10%;
+    --card-foreground: 210 100% 90%;
 
-    --popover: 220 25% 8%;
-    --popover-foreground: 160 100% 90%;
+    --popover: 220 30% 8%;
+    --popover-foreground: 210 100% 90%;
 
-    --primary: 160 100% 45%;
-    --primary-foreground: 220 25% 5%;
+    --primary: 210 100% 55%;
+    --primary-foreground: 220 30% 5%;
 
-    --secondary: 280 100% 60%;
+    --secondary: 260 100% 65%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 220 20% 15%;
-    --muted-foreground: 160 40% 60%;
+    --muted: 220 25% 15%;
+    --muted-foreground: 210 50% 60%;
 
-    --accent: 200 100% 50%;
-    --accent-foreground: 220 25% 5%;
+    --accent: 190 100% 50%;
+    --accent-foreground: 220 30% 5%;
 
     --destructive: 0 100% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 160 100% 20%;
-    --input: 220 20% 15%;
-    --ring: 160 100% 45%;
+    --border: 210 100% 20%;
+    --input: 220 25% 15%;
+    --ring: 210 100% 55%;
 
-    --sidebar-background: 220 25% 8%;
-    --sidebar-foreground: 160 100% 80%;
-    --sidebar-primary: 160 100% 45%;
-    --sidebar-primary-foreground: 220 25% 5%;
-    --sidebar-accent: 220 20% 15%;
-    --sidebar-accent-foreground: 160 100% 80%;
-    --sidebar-border: 160 100% 15%;
-    --sidebar-ring: 160 100% 45%;
+    /* Cyber Colors - Blue Theme */
+    --cyber-green: 160 100% 45%;
+    --cyber-cyan: 190 100% 50%;
+    --cyber-pink: 320 100% 60%;
+    --cyber-purple: 260 100% 65%;
+    --cyber-blue: 210 100% 55%;
+    --cyber-yellow: 50 100% 50%;
+    --cyber-orange: 25 100% 55%;
+    --cyber-red: 0 100% 55%;
+
+    /* Security Colors - Blue Theme */
+    --safe: 160 100% 45%;
+    --safe-foreground: 220 30% 5%;
+    --safe-glow: 160 100% 45%;
+    
+    --danger: 0 100% 55%;
+    --danger-foreground: 0 0% 100%;
+    --danger-glow: 0 100% 55%;
+    
+    --warning: 50 100% 50%;
+    --warning-foreground: 220 30% 5%;
+    --warning-glow: 50 100% 50%;
+    
+    --scanning: 210 100% 55%;
+    --scanning-foreground: 220 30% 5%;
+
+    --sidebar-background: 220 30% 8%;
+    --sidebar-foreground: 210 100% 80%;
+    --sidebar-primary: 210 100% 55%;
+    --sidebar-primary-foreground: 220 30% 5%;
+    --sidebar-accent: 220 25% 15%;
+    --sidebar-accent-foreground: 210 100% 80%;
+    --sidebar-border: 210 100% 15%;
+    --sidebar-ring: 210 100% 55%;
   }
 }
 
@@ -128,18 +154,18 @@
 }
 
 @layer utilities {
-  /* Cyber Gradients */
+  /* Cyber Gradients - Blue Theme */
   .gradient-cyber {
     background: linear-gradient(135deg, 
-      hsl(160 100% 45% / 0.15), 
-      hsl(200 100% 50% / 0.1),
-      hsl(280 100% 60% / 0.05)
+      hsl(210 100% 55% / 0.15), 
+      hsl(190 100% 50% / 0.1),
+      hsl(260 100% 65% / 0.05)
     );
   }
   
   .gradient-cyber-strong {
     background: linear-gradient(135deg, 
-      hsl(160 100% 45% / 0.3), 
+      hsl(210 100% 55% / 0.3),
       hsl(200 100% 50% / 0.2),
       hsl(280 100% 60% / 0.1)
     );
@@ -166,20 +192,20 @@
     );
   }
 
-  /* Neon Glows */
+  /* Neon Glows - Blue Theme */
   .glow-primary {
     box-shadow: 
-      0 0 5px hsl(160 100% 45% / 0.5),
-      0 0 20px hsl(160 100% 45% / 0.3),
-      0 0 40px hsl(160 100% 45% / 0.1),
-      inset 0 0 20px hsl(160 100% 45% / 0.05);
+      0 0 5px hsl(210 100% 55% / 0.5),
+      0 0 20px hsl(210 100% 55% / 0.3),
+      0 0 40px hsl(210 100% 55% / 0.1),
+      inset 0 0 20px hsl(210 100% 55% / 0.05);
   }
 
   .glow-cyan {
     box-shadow: 
-      0 0 5px hsl(180 100% 50% / 0.5),
-      0 0 20px hsl(180 100% 50% / 0.3),
-      0 0 40px hsl(180 100% 50% / 0.1);
+      0 0 5px hsl(190 100% 50% / 0.5),
+      0 0 20px hsl(190 100% 50% / 0.3),
+      0 0 40px hsl(190 100% 50% / 0.1);
   }
 
   .glow-pink {
@@ -210,18 +236,18 @@
       0 0 40px hsl(160 100% 45% / 0.2);
   }
 
-  /* Text Glows */
+  /* Text Glows - Blue Theme */
   .text-glow-primary {
     text-shadow: 
-      0 0 10px hsl(160 100% 45% / 0.8),
-      0 0 20px hsl(160 100% 45% / 0.5),
-      0 0 40px hsl(160 100% 45% / 0.3);
+      0 0 10px hsl(210 100% 55% / 0.8),
+      0 0 20px hsl(210 100% 55% / 0.5),
+      0 0 40px hsl(210 100% 55% / 0.3);
   }
 
   .text-glow-cyan {
     text-shadow: 
-      0 0 10px hsl(180 100% 50% / 0.8),
-      0 0 20px hsl(180 100% 50% / 0.5);
+      0 0 10px hsl(190 100% 50% / 0.8),
+      0 0 20px hsl(190 100% 50% / 0.5);
   }
 
   .text-glow-pink {
@@ -236,9 +262,9 @@
       0 0 20px hsl(0 100% 55% / 0.5);
   }
 
-  /* Cyber Borders */
+  /* Cyber Borders - Blue Theme */
   .border-cyber {
-    border: 1px solid hsl(160 100% 45% / 0.3);
+    border: 1px solid hsl(210 100% 55% / 0.3);
     position: relative;
   }
 
@@ -249,11 +275,11 @@
     left: 0;
     right: 0;
     bottom: 0;
-    border: 1px solid hsl(160 100% 45% / 0.1);
+    border: 1px solid hsl(210 100% 55% / 0.1);
     pointer-events: none;
   }
 
-  /* Scanlines Effect */
+  /* Scanlines Effect - Blue Theme */
   .scanlines {
     position: relative;
   }
@@ -269,23 +295,23 @@
       0deg,
       transparent,
       transparent 2px,
-      hsl(160 100% 45% / 0.03) 2px,
-      hsl(160 100% 45% / 0.03) 4px
+      hsl(210 100% 55% / 0.03) 2px,
+      hsl(210 100% 55% / 0.03) 4px
     );
     pointer-events: none;
   }
 
-  /* Grid Background */
+  /* Grid Background - Blue Theme */
   .cyber-grid {
     background-image: 
-      linear-gradient(hsl(160 100% 45% / 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(160 100% 45% / 0.05) 1px, transparent 1px);
+      linear-gradient(hsl(210 100% 55% / 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(210 100% 55% / 0.05) 1px, transparent 1px);
     background-size: 40px 40px;
   }
 
-  /* Hex Pattern */
+  /* Hex Pattern - Blue Theme */
   .hex-pattern {
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l25.98 15v30L30 60 4.02 45V15z' fill='none' stroke='%2300ff88' stroke-opacity='0.05'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l25.98 15v30L30 60 4.02 45V15z' fill='none' stroke='%232196FF' stroke-opacity='0.05'/%3E%3C/svg%3E");
   }
 
   /* Transitions */
@@ -318,14 +344,14 @@
 @keyframes pulse-glow {
   0%, 100% {
     box-shadow: 
-      0 0 5px hsl(160 100% 45% / 0.5),
-      0 0 20px hsl(160 100% 45% / 0.3);
+      0 0 5px hsl(210 100% 55% / 0.5),
+      0 0 20px hsl(210 100% 55% / 0.3);
   }
   50% {
     box-shadow: 
-      0 0 10px hsl(160 100% 45% / 0.7),
-      0 0 30px hsl(160 100% 45% / 0.5),
-      0 0 50px hsl(160 100% 45% / 0.3);
+      0 0 10px hsl(210 100% 55% / 0.7),
+      0 0 30px hsl(210 100% 55% / 0.5),
+      0 0 50px hsl(210 100% 55% / 0.3);
   }
 }
 
@@ -341,23 +367,23 @@
 @keyframes glitch {
   0%, 100% { 
     transform: translate(0);
-    text-shadow: 0 0 10px hsl(160 100% 45% / 0.8);
+    text-shadow: 0 0 10px hsl(210 100% 55% / 0.8);
   }
   20% { 
     transform: translate(-2px, 2px);
-    text-shadow: -2px 0 hsl(320 100% 60%), 2px 0 hsl(180 100% 50%);
+    text-shadow: -2px 0 hsl(260 100% 65%), 2px 0 hsl(190 100% 50%);
   }
   40% { 
     transform: translate(2px, -2px);
-    text-shadow: 2px 0 hsl(320 100% 60%), -2px 0 hsl(180 100% 50%);
+    text-shadow: 2px 0 hsl(260 100% 65%), -2px 0 hsl(190 100% 50%);
   }
   60% { 
     transform: translate(-1px, 1px);
-    text-shadow: -1px 0 hsl(180 100% 50%), 1px 0 hsl(320 100% 60%);
+    text-shadow: -1px 0 hsl(190 100% 50%), 1px 0 hsl(260 100% 65%);
   }
   80% { 
     transform: translate(1px, -1px);
-    text-shadow: 1px 0 hsl(180 100% 50%), -1px 0 hsl(320 100% 60%);
+    text-shadow: 1px 0 hsl(190 100% 50%), -1px 0 hsl(260 100% 65%);
   }
 }
 
@@ -426,10 +452,10 @@
 
 .animate-border-flow {
   background: linear-gradient(90deg, 
-    hsl(160 100% 45% / 0.5), 
-    hsl(200 100% 50% / 0.5), 
-    hsl(280 100% 60% / 0.5), 
-    hsl(160 100% 45% / 0.5)
+    hsl(210 100% 55% / 0.5), 
+    hsl(190 100% 50% / 0.5), 
+    hsl(260 100% 65% / 0.5), 
+    hsl(210 100% 55% / 0.5)
   );
   background-size: 300% 100%;
   animation: border-flow 3s linear infinite;
@@ -464,19 +490,19 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(160 100% 45% / 0.3);
+  background: hsl(210 100% 55% / 0.3);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(160 100% 45% / 0.5);
+  background: hsl(210 100% 55% / 0.5);
 }
 
-/* Card Hover Effects */
+/* Card Hover Effects - Blue Theme */
 .cyber-card {
   position: relative;
   background: hsl(var(--card));
-  border: 1px solid hsl(160 100% 45% / 0.2);
+  border: 1px solid hsl(210 100% 55% / 0.2);
   overflow: hidden;
   transition: all 0.3s ease;
 }
@@ -491,7 +517,7 @@
   background: linear-gradient(
     90deg,
     transparent,
-    hsl(160 100% 45% / 0.1),
+    hsl(210 100% 55% / 0.1),
     transparent
   );
   transition: left 0.5s ease;
@@ -502,18 +528,18 @@
 }
 
 .cyber-card:hover {
-  border-color: hsl(160 100% 45% / 0.5);
+  border-color: hsl(210 100% 55% / 0.5);
   box-shadow: 
-    0 0 20px hsl(160 100% 45% / 0.2),
-    inset 0 0 20px hsl(160 100% 45% / 0.05);
+    0 0 20px hsl(210 100% 55% / 0.2),
+    inset 0 0 20px hsl(210 100% 55% / 0.05);
 }
 
-/* Button Cyber Style */
+/* Button Cyber Style - Blue Theme */
 .btn-cyber {
   position: relative;
-  background: linear-gradient(135deg, hsl(160 100% 45% / 0.2), hsl(200 100% 50% / 0.1));
-  border: 1px solid hsl(160 100% 45% / 0.5);
-  color: hsl(160 100% 80%);
+  background: linear-gradient(135deg, hsl(210 100% 55% / 0.2), hsl(190 100% 50% / 0.1));
+  border: 1px solid hsl(210 100% 55% / 0.5);
+  color: hsl(210 100% 80%);
   font-family: 'Orbitron', sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -528,7 +554,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, hsl(160 100% 45% / 0.3), transparent);
+  background: linear-gradient(90deg, transparent, hsl(210 100% 55% / 0.3), transparent);
   transition: left 0.3s ease;
 }
 
@@ -537,12 +563,12 @@
 }
 
 .btn-cyber:hover {
-  background: linear-gradient(135deg, hsl(160 100% 45% / 0.4), hsl(200 100% 50% / 0.2));
-  box-shadow: 0 0 30px hsl(160 100% 45% / 0.4);
+  background: linear-gradient(135deg, hsl(210 100% 55% / 0.4), hsl(190 100% 50% / 0.2));
+  box-shadow: 0 0 30px hsl(210 100% 55% / 0.4);
   transform: translateY(-2px);
 }
 
-/* Corner Decorations */
+/* Corner Decorations - Blue Theme */
 .corner-decoration {
   position: relative;
 }
@@ -553,7 +579,7 @@
   position: absolute;
   width: 20px;
   height: 20px;
-  border: 2px solid hsl(160 100% 45% / 0.5);
+  border: 2px solid hsl(210 100% 55% / 0.5);
 }
 
 .corner-decoration::before {
