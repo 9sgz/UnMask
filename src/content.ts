@@ -68,7 +68,12 @@ function analyzeEmailInput(email: string) {
 }
 
 function showWarningBanner(scanResult: any) {
-  // Create warning banner
+  // Validate and sanitize scan result score
+  const validatedScore = typeof scanResult?.score === 'number' 
+    ? Math.max(0, Math.min(100, Math.floor(scanResult.score))) 
+    : 0;
+
+  // Create warning banner using safe DOM manipulation
   const banner = document.createElement('div');
   banner.id = 'unmask-warning-banner';
   banner.style.cssText = `
@@ -88,33 +93,76 @@ function showWarningBanner(scanResult: any) {
     animation: slideDown 0.3s ease-out;
   `;
   
-  banner.innerHTML = `
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="8" x2="12" y2="12"></line>
-        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-      </svg>
-      <div>
-        <div style="font-weight: bold; font-size: 16px;">⚠️ ALERTA DE SEGURANÇA - SITE PERIGOSO</div>
-        <div style="font-size: 14px; opacity: 0.9; margin-top: 4px;">
-          Este site foi identificado como potencialmente perigoso. Score de segurança: ${scanResult.score}/100
-        </div>
-      </div>
-    </div>
-    <button id="unmask-close-banner" style="
-      background: rgba(255,255,255,0.2);
-      border: 1px solid rgba(255,255,255,0.3);
-      color: white;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.2s;
-    ">
-      Entendi
-    </button>
+  // Create content container
+  const contentWrapper = document.createElement('div');
+  contentWrapper.style.cssText = 'display: flex; align-items: center; gap: 12px;';
+  
+  // Create SVG icon
+  const iconContainer = document.createElement('div');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', '24');
+  svg.setAttribute('height', '24');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2');
+  
+  const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  circle.setAttribute('cx', '12');
+  circle.setAttribute('cy', '12');
+  circle.setAttribute('r', '10');
+  
+  const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line1.setAttribute('x1', '12');
+  line1.setAttribute('y1', '8');
+  line1.setAttribute('x2', '12');
+  line1.setAttribute('y2', '12');
+  
+  const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line2.setAttribute('x1', '12');
+  line2.setAttribute('y1', '16');
+  line2.setAttribute('x2', '12.01');
+  line2.setAttribute('y2', '16');
+  
+  svg.appendChild(circle);
+  svg.appendChild(line1);
+  svg.appendChild(line2);
+  iconContainer.appendChild(svg);
+  
+  // Create text container
+  const textContainer = document.createElement('div');
+  
+  const titleDiv = document.createElement('div');
+  titleDiv.style.cssText = 'font-weight: bold; font-size: 16px;';
+  titleDiv.textContent = '⚠️ ALERTA DE SEGURANÇA - SITE PERIGOSO';
+  
+  const scoreDiv = document.createElement('div');
+  scoreDiv.style.cssText = 'font-size: 14px; opacity: 0.9; margin-top: 4px;';
+  scoreDiv.textContent = `Este site foi identificado como potencialmente perigoso. Score de segurança: ${validatedScore}/100`;
+  
+  textContainer.appendChild(titleDiv);
+  textContainer.appendChild(scoreDiv);
+  
+  contentWrapper.appendChild(iconContainer);
+  contentWrapper.appendChild(textContainer);
+  
+  // Create close button
+  const closeButton = document.createElement('button');
+  closeButton.id = 'unmask-close-banner';
+  closeButton.style.cssText = `
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
   `;
+  closeButton.textContent = 'Entendi';
+  
+  banner.appendChild(contentWrapper);
+  banner.appendChild(closeButton);
   
   // Add animation keyframes
   const style = document.createElement('style');
@@ -135,20 +183,19 @@ function showWarningBanner(scanResult: any) {
   document.body.prepend(banner);
   
   // Add close handler
-  const closeButton = document.getElementById('unmask-close-banner');
-  closeButton?.addEventListener('click', () => {
+  closeButton.addEventListener('click', () => {
     banner.style.animation = 'slideDown 0.3s ease-out reverse';
     setTimeout(() => banner.remove(), 300);
   });
 }
 
-function highlightDangerousForm(form: HTMLFormElement, scanResult: any) {
+function highlightDangerousForm(form: HTMLFormElement, _scanResult: unknown) {
   form.style.border = '3px solid #ef4444';
   form.style.borderRadius = '8px';
   form.style.padding = '16px';
   form.style.position = 'relative';
   
-  // Add warning overlay
+  // Add warning overlay using safe DOM manipulation (no innerHTML)
   const warning = document.createElement('div');
   warning.style.cssText = `
     position: absolute;
@@ -163,6 +210,7 @@ function highlightDangerousForm(form: HTMLFormElement, scanResult: any) {
     font-weight: bold;
     font-family: system-ui, -apple-system, sans-serif;
   `;
+  // Use textContent instead of innerHTML for safety
   warning.textContent = '⚠️ FORMULÁRIO DE PAGAMENTO SUSPEITO - CUIDADO!';
   
   form.style.position = 'relative';
