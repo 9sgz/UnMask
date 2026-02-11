@@ -15,6 +15,7 @@ import { useRealtimeAlerts } from '@/hooks/useRealtimeAlerts';
 import { AlertIndicator } from './AlertIndicator';
 import { AttackFeed } from './AttackFeed';
 import { CodeTicker } from './CodeTicker';
+import Waves from './Waves';
 
 const CyberAttackMap = lazy(() => import('./CyberAttackMap'));
 
@@ -176,9 +177,22 @@ export const CyberCrimeDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen bg-background p-6 relative">
+      <Waves
+        lineColor="hsl(230, 98%, 58%)"
+        backgroundColor="transparent"
+        waveSpeedX={0.0125}
+        waveSpeedY={0.01}
+        waveAmpX={40}
+        waveAmpY={20}
+        friction={0.9}
+        tension={0.01}
+        maxCursorMove={120}
+        xGap={12}
+        yGap={36}
+      />
       <CodeTicker />
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6 relative z-10">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
           <div>
