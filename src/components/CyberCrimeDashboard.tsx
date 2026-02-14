@@ -210,7 +210,7 @@ export const CyberCrimeDashboard = () => {
             <AlertIndicator onEnableNotifications={requestNotificationPermission} />
 
             {/* Period Filter */}
-            <div className="flex items-center gap-2 bg-muted/50 p-1 rounded-lg border border-border">
+            <div className="flex items-center gap-2 bg-muted/50 glass p-1 rounded-lg">
             <Filter className="w-4 h-4 text-muted-foreground ml-2" />
             {(['day', 'week', 'month', 'semester', 'year'] as TimePeriod[]).map((p) => (
               <Button
@@ -391,7 +391,7 @@ export const CyberCrimeDashboard = () => {
             {crimes.slice(0, 10).map((crime) => (
               <div 
                 key={crime.id} 
-                className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                className="flex items-center justify-between p-4 bg-muted/20 glass rounded-lg hover:bg-muted/40 transition-colors"
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
