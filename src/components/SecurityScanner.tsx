@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useNavigate } from 'react-router-dom';
-import Waves from './Waves';
+import LightPillar from './LightPillar';
 
 /// <reference types="chrome" />
 
@@ -150,19 +150,22 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
-      <Waves
-        lineColor="hsl(230, 85%, 55%)"
-        backgroundColor="transparent"
-        waveSpeedX={0.0125}
-        waveSpeedY={0.008}
-        waveAmpX={32}
-        waveAmpY={16}
-        friction={0.92}
-        tension={0.008}
-        maxCursorMove={100}
-        xGap={14}
-        yGap={40}
-      />
+      <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}>
+        <LightPillar
+          topColor="#5227FF"
+          bottomColor="#FF9FFC"
+          intensity={1}
+          rotationSpeed={0.3}
+          glowAmount={0.002}
+          pillarWidth={3}
+          pillarHeight={0.4}
+          noiseIntensity={0.5}
+          pillarRotation={25}
+          interactive={false}
+          mixBlendMode="screen"
+          quality="high"
+        />
+      </div>
 
       <nav className="relative z-20 px-6 md:px-10 py-5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
