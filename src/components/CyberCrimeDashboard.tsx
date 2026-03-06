@@ -1,25 +1,9 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { 
-  Shield, AlertTriangle, TrendingUp, Activity, 
-  Globe, Clock, Filter, ChevronRight, MapPin 
-} from 'lucide-react';
+import { Activity, Shield, AlertTriangle, Zap, Globe, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
-} from 'recharts';
 import { useRealtimeAlerts } from '@/hooks/useRealtimeAlerts';
-import { AlertIndicator } from './AlertIndicator';
-import { AttackFeed } from './AttackFeed';
-import { CodeTicker } from './CodeTicker';
-import Waves from './Waves';
 
 const CyberAttackMap = lazy(() => import('./CyberAttackMap'));
-
-type TimePeriod = 'day' | 'week' | 'month' | 'semester' | 'year';
 
 interface CyberCrime {
   id: string;
@@ -32,386 +16,213 @@ interface CyberCrime {
   attack_vector: string;
   status: 'active' | 'mitigated' | 'resolved';
   detected_at: string;
+  ip_address?: string;
 }
 
-const COLORS = {
-  critical: 'hsl(var(--danger))',
-  high: 'hsl(var(--warning))',
-  medium: '#3b82f6',
-  low: 'hsl(var(--safe))',
+// Threat type categories like Kaspersky
+const THREAT_CATEGORIES = [
+  { key: 'OAS', label: 'OAS', color: '#00e676', description: 'On-Access Scan' },
+  { key: 'ODS', label: 'ODS', color: '#2979ff', description: 'On-Demand Scan' },
+  { key: 'MAV', label: 'MAV', color: '#ff1744', description: 'Mail Anti-Virus' },
+  { key: 'WAV', label: 'WAV', color: '#ff9100', description: 'Web Anti-Virus' },
+  { key: 'IDS', label: 'IDS', color: '#d500f9', description: 'Intrusion Detection' },
+  { key: 'VUL', label: 'VUL', color: '#00b0ff', description: 'Vulnerabilidades' },
+  { key: 'KAS', label: 'KAS', color: '#76ff03', description: 'Kaspersky Anti-Spam' },
+  { key: 'BAD', label: 'BAD', color: '#ff6d00', description: 'Botnet Activity' },
+];
+
+const mapCrimeToCategory = (crimeType: string): string => {
+  const lower = crimeType.toLowerCase();
+  if (lower.includes('phishing') || lower.includes('mail') || lower.includes('email')) return 'MAV';
+  if (lower.includes('malware') || lower.includes('virus') || lower.includes('trojan')) return 'OAS';
+  if (lower.includes('ddos') || lower.includes('botnet') || lower.includes('bot')) return 'BAD';
+  if (lower.includes('ransomware') || lower.includes('scan')) return 'ODS';
+  if (lower.includes('web') || lower.includes('xss') || lower.includes('sql')) return 'WAV';
+  if (lower.includes('intrusion') || lower.includes('brute') || lower.includes('exploit')) return 'IDS';
+  if (lower.includes('vulnerab') || lower.includes('cve')) return 'VUL';
+  if (lower.includes('spam')) return 'KAS';
+  return 'OAS';
 };
 
 export const CyberCrimeDashboard = () => {
   const [crimes, setCrimes] = useState<CyberCrime[]>([]);
-  const [period, setPeriod] = useState<TimePeriod>('week');
-  const [loading, setLoading] = useState(true);
+  const [recentAttacks, setRecentAttacks] = useState<CyberCrime[]>([]);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
   const { requestNotificationPermission } = useRealtimeAlerts();
 
   useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
+  useEffect(() => {
+    const fetchCrimes = async () => {
+      const { data, error } = await supabase
+        .from('cyber_crimes')
+        .select('*')
+        .order('detected_at', { ascending: false });
+
+      if (!error && data) {
+        setCrimes(data as CyberCrime[]);
+        setRecentAttacks((data as CyberCrime[]).slice(0, 8));
+        
+        // Count by category
+        const counts: Record<string, number> = {};
+        (data as CyberCrime[]).forEach(crime => {
+          const cat = mapCrimeToCategory(crime.crime_type);
+          counts[cat] = (counts[cat] || 0) + 1;
+        });
+        setCategoryCounts(counts);
+      }
+    };
+
     fetchCrimes();
-    
-    // Realtime subscription
+
     const channel = supabase
-      .channel('cyber-crimes-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'cyber_crimes'
-        },
-        () => {
-          fetchCrimes();
+      .channel('cyber-crimes-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cyber_crimes' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const newCrime = payload.new as CyberCrime;
+          setCrimes(prev => [newCrime, ...prev]);
+          setRecentAttacks(prev => [newCrime, ...prev].slice(0, 8));
+          const cat = mapCrimeToCategory(newCrime.crime_type);
+          setCategoryCounts(prev => ({ ...prev, [cat]: (prev[cat] || 0) + 1 }));
         }
-      )
+      })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [period]);
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
-  const fetchCrimes = async () => {
-    setLoading(true);
-    const dateFilter = getDateFilter(period);
-    
-    const { data, error } = await supabase
-      .from('cyber_crimes')
-      .select('*')
-      .gte('detected_at', dateFilter)
-      .order('detected_at', { ascending: false });
-
-    if (!error && data) {
-      setCrimes(data as CyberCrime[]);
-    }
-    setLoading(false);
-  };
-
-  const getDateFilter = (period: TimePeriod): string => {
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
     const now = new Date();
-    switch (period) {
-      case 'day':
-        return new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
-      case 'week':
-        return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
-      case 'month':
-        return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      case 'semester':
-        return new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000).toISOString();
-      case 'year':
-        return new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'agora';
+    if (diffMins < 60) return `${diffMins}m`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h`;
+    return `${Math.floor(diffHours / 24)}d`;
+  };
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'critical': return 'text-red-500';
+      case 'high': return 'text-orange-400';
+      case 'medium': return 'text-blue-400';
+      default: return 'text-emerald-400';
     }
   };
 
-  const getPeriodLabel = (p: TimePeriod): string => {
-    const labels = {
-      day: 'Hoje',
-      week: 'Semana',
-      month: 'Mês',
-      semester: 'Semestre',
-      year: 'Ano'
-    };
-    return labels[p];
-  };
-
-  // Statistics
-  const stats = {
-    total: crimes.length,
-    active: crimes.filter(c => c.status === 'active').length,
-    critical: crimes.filter(c => c.severity === 'critical').length,
-    resolved: crimes.filter(c => c.status === 'resolved').length,
-  };
-
-  // Severity distribution
-  const severityData = [
-    { name: 'Crítico', value: crimes.filter(c => c.severity === 'critical').length, color: COLORS.critical },
-    { name: 'Alto', value: crimes.filter(c => c.severity === 'high').length, color: COLORS.high },
-    { name: 'Médio', value: crimes.filter(c => c.severity === 'medium').length, color: COLORS.medium },
-    { name: 'Baixo', value: crimes.filter(c => c.severity === 'low').length, color: COLORS.low },
-  ].filter(d => d.value > 0);
-
-  // Crime types distribution
-  const crimeTypesData = Object.entries(
-    crimes.reduce((acc, crime) => {
-      acc[crime.crime_type] = (acc[crime.crime_type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>)
-  ).map(([name, value]) => ({ name, value }));
-
-  // Timeline data (last 7 days)
-  const timelineData = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (6 - i));
-    const dateStr = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-    
-    const count = crimes.filter(c => {
-      const crimeDate = new Date(c.detected_at);
-      return crimeDate.toDateString() === date.toDateString();
-    }).length;
-    
-    return { date: dateStr, crimes: count };
-  });
-
-  const getSeverityBadge = (severity: string) => {
-    const variants = {
-      critical: 'bg-danger text-danger-foreground',
-      high: 'bg-warning text-warning-foreground',
-      medium: 'bg-blue-500 text-white',
-      low: 'bg-safe text-safe-foreground',
-    };
-    return <Badge className={variants[severity as keyof typeof variants]}>{severity.toUpperCase()}</Badge>;
-  };
-
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      active: 'bg-danger text-danger-foreground',
-      mitigated: 'bg-warning text-warning-foreground',
-      resolved: 'bg-safe text-safe-foreground',
-    };
-    const labels = {
-      active: 'Ativo',
-      mitigated: 'Mitigado',
-      resolved: 'Resolvido',
-    };
-    return <Badge className={variants[status as keyof typeof variants]}>{labels[status as keyof typeof labels]}</Badge>;
-  };
+  const activeCrimes = crimes.filter(c => c.status === 'active');
 
   return (
-    <div className="min-h-screen bg-background p-6 relative">
-      <Waves
-        lineColor="hsl(230, 98%, 58%)"
-        backgroundColor="transparent"
-        waveSpeedX={0.0125}
-        waveSpeedY={0.01}
-        waveAmpX={40}
-        waveAmpY={20}
-        friction={0.9}
-        tension={0.01}
-        maxCursorMove={120}
-        xGap={12}
-        yGap={36}
-      />
-      <CodeTicker />
-      <div className="max-w-7xl mx-auto space-y-6 relative z-10">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-              <Shield className="w-8 h-8 text-primary" />
-              Dashboard de Crimes Cibernéticos
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Monitoramento em tempo real de ameaças digitais
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* Alert Indicator */}
-            <AlertIndicator onEnableNotifications={requestNotificationPermission} />
-
-            {/* Period Filter */}
-            <div className="flex items-center gap-2 bg-muted/50 glass p-1 rounded-lg">
-            <Filter className="w-4 h-4 text-muted-foreground ml-2" />
-            {(['day', 'week', 'month', 'semester', 'year'] as TimePeriod[]).map((p) => (
-              <Button
-                key={p}
-                onClick={() => setPeriod(p)}
-                variant={period === p ? 'default' : 'ghost'}
-                size="sm"
-                className={period === p ? 'bg-primary text-primary-foreground' : ''}
-              >
-                {getPeriodLabel(p)}
-              </Button>
-            ))}
-            </div>
-          </div>
+    <div className="fixed inset-0 bg-[#0a0f1a] text-white overflow-hidden flex flex-col">
+      {/* Top Header Bar - Kaspersky style */}
+      <header className="relative z-20 flex items-center justify-between px-6 py-3 border-b border-white/10 bg-black/40 backdrop-blur-sm">
+        <div className="flex items-center gap-3">
+          <Shield className="w-6 h-6 text-primary" />
+          <h1 className="text-lg tracking-wider font-light">
+            MAPA DE <span className="font-bold text-primary">CIBERAMEAÇAS</span>
+          </h1>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="p-6 gradient-hero border-primary/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total de Ameaças</p>
-                <p className="text-3xl font-bold text-foreground mt-1">{stats.total}</p>
-              </div>
-              <Activity className="w-10 h-10 text-primary" />
-            </div>
-          </Card>
+        <nav className="hidden md:flex items-center gap-6 text-xs tracking-widest text-white/60 uppercase">
+          <button className="text-primary border-b border-primary pb-1">Mapa</button>
+          <button className="hover:text-white/80 transition-colors">Estatísticas</button>
+          <button className="hover:text-white/80 transition-colors">Fonte de Dados</button>
+        </nav>
 
-          <Card className="p-6 gradient-danger border-danger/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Ameaças Ativas</p>
-                <p className="text-3xl font-bold text-danger mt-1">{stats.active}</p>
-              </div>
-              <AlertTriangle className="w-10 h-10 text-danger" />
-            </div>
-          </Card>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-xs text-white/50">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>LIVE</span>
+          </div>
+        </div>
+      </header>
 
-          <Card className="p-6 gradient-warning border-warning/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Nível Crítico</p>
-                <p className="text-3xl font-bold text-warning mt-1">{stats.critical}</p>
-              </div>
-              <Shield className="w-10 h-10 text-warning" />
+      {/* Main Map Area */}
+      <div className="flex-1 relative">
+        {/* Full-screen Map */}
+        <div className="absolute inset-0">
+          <Suspense fallback={
+            <div className="w-full h-full flex items-center justify-center">
+              <Activity className="w-8 h-8 animate-spin text-primary" />
             </div>
-          </Card>
-
-          <Card className="p-6 gradient-safe border-safe/20">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Resolvidas</p>
-                <p className="text-3xl font-bold text-safe mt-1">{stats.resolved}</p>
-              </div>
-              <TrendingUp className="w-10 h-10 text-safe" />
-            </div>
-          </Card>
+          }>
+            <CyberAttackMap crimes={crimes} />
+          </Suspense>
         </div>
 
-        {/* Mapa Mundial e Feed de Ataques */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <Card className="p-6 border-border lg:col-span-3">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-primary" />
-              Mapa de Ataques em Tempo Real
-            </h3>
-            <div className="h-[500px] rounded-lg overflow-hidden bg-muted/20">
-              <Suspense fallback={
-                <div className="w-full h-full flex items-center justify-center">
-                  <div className="text-center">
-                    <Activity className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Carregando mapa...</p>
+        {/* Right Side - Live Attack Feed */}
+        <div className="absolute top-4 right-4 z-10 w-72 max-h-[calc(100vh-180px)] overflow-hidden">
+          <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg overflow-hidden">
+            <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+              <span className="text-xs tracking-widest text-white/60 uppercase flex items-center gap-2">
+                <Zap className="w-3 h-3 text-primary" />
+                Ataques Recentes
+              </span>
+              <span className="text-xs text-primary font-mono">{activeCrimes.length}</span>
+            </div>
+            <div className="divide-y divide-white/5 max-h-80 overflow-y-auto scrollbar-thin">
+              {recentAttacks.map((attack) => (
+                <div key={attack.id} className="px-4 py-2.5 hover:bg-white/5 transition-colors">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-xs font-semibold ${getSeverityColor(attack.severity)}`}>
+                      {attack.crime_type}
+                    </span>
+                    <span className="text-[10px] text-white/30 font-mono">{formatTime(attack.detected_at)}</span>
                   </div>
+                  <div className="flex items-center gap-1 text-[11px] text-white/40">
+                    <span>{attack.source_country || '??'}</span>
+                    <span className="text-primary">→</span>
+                    <span>{attack.target_country || '??'}</span>
+                  </div>
+                  {attack.ip_address && (
+                    <p className="text-[10px] text-white/25 font-mono mt-0.5">{attack.ip_address}</p>
+                  )}
                 </div>
-              }>
-                <CyberAttackMap crimes={crimes} />
-              </Suspense>
-            </div>
-          </Card>
-
-          <div className="h-[572px]">
-            <AttackFeed />
-          </div>
-        </div>
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Timeline Chart */}
-          <Card className="p-6 border-border">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-primary" />
-              Tendência (Últimos 7 dias)
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={timelineData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="crimes" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={2}
-                  dot={{ fill: 'hsl(var(--primary))' }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </Card>
-
-          {/* Severity Distribution */}
-          <Card className="p-6 border-border">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-primary" />
-              Distribuição por Severidade
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={severityData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {severityData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </Card>
-
-          {/* Crime Types */}
-          <Card className="p-6 border-border lg:col-span-2">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Globe className="w-5 h-5 text-primary" />
-              Tipos de Ameaças
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={crimeTypesData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: 'hsl(var(--card))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Bar dataKey="value" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
-        </div>
-
-        {/* Recent Crimes Table */}
-        <Card className="p-6 border-border">
-          <h3 className="text-lg font-semibold mb-4">Ameaças Recentes</h3>
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {crimes.slice(0, 10).map((crime) => (
-              <div 
-                key={crime.id} 
-                className="flex items-center justify-between p-4 bg-muted/20 glass rounded-lg hover:bg-muted/40 transition-colors"
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-semibold text-foreground">{crime.crime_type}</h4>
-                    {getSeverityBadge(crime.severity)}
-                    {getStatusBadge(crime.status)}
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-1">{crime.description}</p>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span>🎯 {crime.target_type}</span>
-                    <span>🌍 {crime.source_country} → {crime.target_country}</span>
-                    <span>⏰ {new Date(crime.detected_at).toLocaleString('pt-BR')}</span>
-                  </div>
+              ))}
+              {recentAttacks.length === 0 && (
+                <div className="px-4 py-8 text-center text-white/30 text-xs">
+                  Aguardando dados...
                 </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
-              </div>
-            ))}
+              )}
+            </div>
           </div>
-        </Card>
+        </div>
+
+        {/* Left Side Stats */}
+        <div className="absolute top-4 left-4 z-10 space-y-3">
+          <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg px-4 py-3">
+            <div className="text-[10px] text-white/40 uppercase tracking-widest mb-1">Ameaças Detectadas</div>
+            <div className="text-2xl font-bold text-primary font-mono">{crimes.length.toLocaleString()}</div>
+          </div>
+          <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg px-4 py-3">
+            <div className="text-[10px] text-white/40 uppercase tracking-widest mb-1">Ataques Ativos</div>
+            <div className="text-2xl font-bold text-red-500 font-mono">{activeCrimes.length}</div>
+          </div>
+        </div>
       </div>
+
+      {/* Bottom Stats Bar - Kaspersky style categories */}
+      <footer className="relative z-20 border-t border-white/10 bg-black/60 backdrop-blur-md">
+        <div className="flex items-stretch justify-center divide-x divide-white/10">
+          {THREAT_CATEGORIES.map((cat) => (
+            <div key={cat.key} className="flex flex-col items-center px-4 md:px-8 py-3 hover:bg-white/5 transition-colors cursor-pointer group">
+              <span className="text-sm md:text-lg font-bold font-mono text-white/80 group-hover:text-white transition-colors">
+                {(categoryCounts[cat.key] || 0).toLocaleString()}
+              </span>
+              <span
+                className="text-[10px] md:text-xs font-bold tracking-wider mt-1 px-2 py-0.5 rounded"
+                style={{ color: cat.color, backgroundColor: `${cat.color}15` }}
+              >
+                {cat.label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </footer>
     </div>
   );
 };
