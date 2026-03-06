@@ -204,7 +204,7 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
           </h1>
           
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Sistema inteligente de detecção que analisa sites, e-mails e links de pagamento em tempo real para sua segurança.
+            A plataforma de detecção e prevenção de golpes digitais do Brasil
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10 text-sm text-muted-foreground mb-12">
