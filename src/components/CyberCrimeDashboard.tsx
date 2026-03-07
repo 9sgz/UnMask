@@ -19,7 +19,6 @@ interface CyberCrime {
   ip_address?: string;
 }
 
-// Threat type categories like Kaspersky
 const THREAT_CATEGORIES = [
   { key: 'OAS', label: 'OAS', color: '#00e676', description: 'On-Access Scan' },
   { key: 'ODS', label: 'ODS', color: '#2979ff', description: 'On-Demand Scan' },
@@ -65,7 +64,6 @@ export const CyberCrimeDashboard = () => {
         setCrimes(data as CyberCrime[]);
         setRecentAttacks((data as CyberCrime[]).slice(0, 8));
         
-        // Count by category
         const counts: Record<string, number> = {};
         (data as CyberCrime[]).forEach(crime => {
           const cat = mapCrimeToCategory(crime.crime_type);
@@ -107,10 +105,10 @@ export const CyberCrimeDashboard = () => {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'text-red-500';
-      case 'high': return 'text-orange-400';
-      case 'medium': return 'text-blue-400';
-      default: return 'text-emerald-400';
+      case 'critical': return 'text-danger';
+      case 'high': return 'text-warning';
+      case 'medium': return 'text-primary';
+      default: return 'text-safe';
     }
   };
 
@@ -118,8 +116,8 @@ export const CyberCrimeDashboard = () => {
 
   return (
     <div className="fixed inset-0 bg-background/80 text-foreground overflow-hidden flex flex-col">
-      {/* Top Header Bar - Kaspersky style */}
-      <header className="relative z-20 flex items-center justify-between px-6 py-3 border-b border-border/30 bg-background/60 backdrop-blur-sm">
+      {/* Top Header Bar */}
+      <header className="relative z-20 flex items-center justify-between px-6 py-3 border-b border-border/30 bg-card/60 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <Shield className="w-6 h-6 text-primary" />
           <h1 className="text-lg tracking-wider font-light">
@@ -127,15 +125,15 @@ export const CyberCrimeDashboard = () => {
           </h1>
         </div>
 
-        <nav className="hidden md:flex items-center gap-6 text-xs tracking-widest text-white/60 uppercase">
+        <nav className="hidden md:flex items-center gap-6 text-xs tracking-widest text-muted-foreground uppercase">
           <button className="text-primary border-b border-primary pb-1">Mapa</button>
-          <button className="hover:text-white/80 transition-colors">Estatísticas</button>
-          <button className="hover:text-white/80 transition-colors">Fonte de Dados</button>
+          <button className="hover:text-foreground transition-colors">Estatísticas</button>
+          <button className="hover:text-foreground transition-colors">Fonte de Dados</button>
         </nav>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-xs text-white/50">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="w-2 h-2 rounded-full bg-safe animate-pulse" />
             <span>LIVE</span>
           </div>
         </div>
@@ -143,7 +141,6 @@ export const CyberCrimeDashboard = () => {
 
       {/* Main Map Area */}
       <div className="flex-1 relative">
-        {/* Full-screen Map */}
         <div className="absolute inset-0">
           <Suspense fallback={
             <div className="w-full h-full flex items-center justify-center">
@@ -156,35 +153,35 @@ export const CyberCrimeDashboard = () => {
 
         {/* Right Side - Live Attack Feed */}
         <div className="absolute top-4 right-4 z-10 w-72 max-h-[calc(100vh-180px)] overflow-hidden">
-          <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg overflow-hidden">
-            <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
-              <span className="text-xs tracking-widest text-white/60 uppercase flex items-center gap-2">
+          <div className="bg-card/80 backdrop-blur-md border border-border/30 rounded-lg overflow-hidden">
+            <div className="px-4 py-3 border-b border-border/30 flex items-center justify-between">
+              <span className="text-xs tracking-widest text-muted-foreground uppercase flex items-center gap-2">
                 <Zap className="w-3 h-3 text-primary" />
                 Ataques Recentes
               </span>
               <span className="text-xs text-primary font-mono">{activeCrimes.length}</span>
             </div>
-            <div className="divide-y divide-white/5 max-h-80 overflow-y-auto scrollbar-thin">
+            <div className="divide-y divide-border/20 max-h-80 overflow-y-auto scrollbar-thin">
               {recentAttacks.map((attack) => (
-                <div key={attack.id} className="px-4 py-2.5 hover:bg-white/5 transition-colors">
+                <div key={attack.id} className="px-4 py-2.5 hover:bg-muted/30 transition-colors">
                   <div className="flex items-center justify-between mb-1">
                     <span className={`text-xs font-semibold ${getSeverityColor(attack.severity)}`}>
                       {attack.crime_type}
                     </span>
-                    <span className="text-[10px] text-white/30 font-mono">{formatTime(attack.detected_at)}</span>
+                    <span className="text-[10px] text-muted-foreground/50 font-mono">{formatTime(attack.detected_at)}</span>
                   </div>
-                  <div className="flex items-center gap-1 text-[11px] text-white/40">
+                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground/60">
                     <span>{attack.source_country || '??'}</span>
                     <span className="text-primary">→</span>
                     <span>{attack.target_country || '??'}</span>
                   </div>
                   {attack.ip_address && (
-                    <p className="text-[10px] text-white/25 font-mono mt-0.5">{attack.ip_address}</p>
+                    <p className="text-[10px] text-muted-foreground/40 font-mono mt-0.5">{attack.ip_address}</p>
                   )}
                 </div>
               ))}
               {recentAttacks.length === 0 && (
-                <div className="px-4 py-8 text-center text-white/30 text-xs">
+                <div className="px-4 py-8 text-center text-muted-foreground/50 text-xs">
                   Aguardando dados...
                 </div>
               )}
@@ -194,23 +191,23 @@ export const CyberCrimeDashboard = () => {
 
         {/* Left Side Stats */}
         <div className="absolute top-4 left-4 z-10 space-y-3">
-          <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg px-4 py-3">
-            <div className="text-[10px] text-white/40 uppercase tracking-widest mb-1">Ameaças Detectadas</div>
+          <div className="bg-card/80 backdrop-blur-md border border-border/30 rounded-lg px-4 py-3">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Ameaças Detectadas</div>
             <div className="text-2xl font-bold text-primary font-mono">{crimes.length.toLocaleString()}</div>
           </div>
-          <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-lg px-4 py-3">
-            <div className="text-[10px] text-white/40 uppercase tracking-widest mb-1">Ataques Ativos</div>
-            <div className="text-2xl font-bold text-red-500 font-mono">{activeCrimes.length}</div>
+          <div className="bg-card/80 backdrop-blur-md border border-border/30 rounded-lg px-4 py-3">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Ataques Ativos</div>
+            <div className="text-2xl font-bold text-danger font-mono">{activeCrimes.length}</div>
           </div>
         </div>
       </div>
 
-      {/* Bottom Stats Bar - Kaspersky style categories */}
-      <footer className="relative z-20 border-t border-white/10 bg-black/60 backdrop-blur-md">
-        <div className="flex items-stretch justify-center divide-x divide-white/10">
+      {/* Bottom Stats Bar */}
+      <footer className="relative z-20 border-t border-border/30 bg-card/60 backdrop-blur-md">
+        <div className="flex items-stretch justify-center divide-x divide-border/20">
           {THREAT_CATEGORIES.map((cat) => (
-            <div key={cat.key} className="flex flex-col items-center px-4 md:px-8 py-3 hover:bg-white/5 transition-colors cursor-pointer group">
-              <span className="text-sm md:text-lg font-bold font-mono text-white/80 group-hover:text-white transition-colors">
+            <div key={cat.key} className="flex flex-col items-center px-4 md:px-8 py-3 hover:bg-muted/30 transition-colors cursor-pointer group">
+              <span className="text-sm md:text-lg font-bold font-mono text-foreground/80 group-hover:text-foreground transition-colors">
                 {(categoryCounts[cat.key] || 0).toLocaleString()}
               </span>
               <span
