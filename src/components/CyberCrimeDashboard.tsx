@@ -117,9 +117,9 @@ export const CyberCrimeDashboard = () => {
   const activeCrimes = crimes.filter(c => c.status === 'active');
 
   return (
-    <div className="fixed inset-0 bg-[#0a0f1a] text-white overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-background/80 text-foreground overflow-hidden flex flex-col">
       {/* Top Header Bar - Kaspersky style */}
-      <header className="relative z-20 flex items-center justify-between px-6 py-3 border-b border-white/10 bg-black/40 backdrop-blur-sm">
+      <header className="relative z-20 flex items-center justify-between px-6 py-3 border-b border-border/30 bg-background/60 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <Shield className="w-6 h-6 text-primary" />
           <h1 className="text-lg tracking-wider font-light">
