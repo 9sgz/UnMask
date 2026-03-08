@@ -1,5 +1,4 @@
 import { SecurityScanner } from '@/components/SecurityScanner';
-import LightPillar from '@/components/LightPillar';
 import ColorBends from '@/components/ColorBends';
 
 const Index = () => {
@@ -19,22 +18,6 @@ const Index = () => {
           transparent
           autoRotate={0}
           color=""
-        />
-      </div>
-      <div className="fixed inset-0 z-[1] pointer-events-none">
-        <LightPillar
-          topColor="#5227FF"
-          bottomColor="#FF9FFC"
-          intensity={1}
-          rotationSpeed={0.3}
-          glowAmount={0.002}
-          pillarWidth={3}
-          pillarHeight={0.4}
-          noiseIntensity={0.5}
-          pillarRotation={25}
-          interactive={false}
-          mixBlendMode="screen"
-          quality="high"
         />
       </div>
       <div className="relative z-10">
