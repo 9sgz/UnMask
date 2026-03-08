@@ -149,7 +149,7 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
   const hasResults = result || emailResult || paymentResult;
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden">
 
       <nav className="relative z-20 px-6 md:px-10 py-5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
