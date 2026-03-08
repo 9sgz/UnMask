@@ -227,7 +227,6 @@ export default function ColorBends({
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       if (resizeObserverRef.current) resizeObserverRef.current.disconnect();
-      else window.removeEventListener('resize', handleResize);
       geometry.dispose();
       material.dispose();
       renderer.dispose();
