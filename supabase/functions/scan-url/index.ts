@@ -12,7 +12,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const apiKey = Deno.env.get('VIRUSTOTAL_API_KEY');
+  const rawKey = Deno.env.get('VIRUSTOTAL_API_KEY');
+  const apiKey = rawKey?.trim();
+  console.log(`VT API key length: ${apiKey?.length}, starts with: ${apiKey?.substring(0, 6)}...`);
   if (!apiKey) {
     return new Response(JSON.stringify({ error: 'VIRUSTOTAL_API_KEY not configured' }), {
       status: 500,
