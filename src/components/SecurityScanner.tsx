@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Shield, AlertTriangle, CheckCircle, XCircle, Search, Globe, Lock, Eye, Clock, Zap, Mail, Cpu, Target, Scan, Activity, Bug, MessageCircle, CreditCard, DollarSign, BarChart3, ArrowRight, Sparkles, ChevronRight } from 'lucide-react';
 import unmaskLogo from '@/assets/unmask-logo-new.png';
 import { Button } from '@/components/ui/button';
