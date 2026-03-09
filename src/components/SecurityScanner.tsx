@@ -69,15 +69,41 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
         } return;
       } catch (error) { console.error('Extension API error:', error); }
     }
-    const scanSteps = ['Verificando certificado SSL...', 'Analisando reputação do domínio...', 'Escaneando por malware...', 'Detectando phishing...', 'Verificando redirecionamentos...', 'Validando idade do domínio...'];
-    for (let i = 0; i < scanSteps.length; i++) { await new Promise(resolve => setTimeout(resolve, 800)); setProgress((i + 1) * (100 / scanSteps.length)); }
-    const mockResult: ScanResult = {
-      url: currentUrl, status: Math.random() > 0.7 ? 'danger' : Math.random() > 0.5 ? 'warning' : 'safe', score: Math.floor(Math.random() * 100),
-      checks: { ssl: Math.random() > 0.2, reputation: Math.random() > 0.3, malware: Math.random() > 0.1, phishing: Math.random() > 0.2, redirects: Math.random() > 0.4, age: Math.random() > 0.3 },
-      details: { domain: new URL(currentUrl).hostname, title: 'Site Analisado', description: 'Resultado da análise de segurança', lastScan: new Date().toLocaleString('pt-BR') }
-    };
-    setResult(mockResult); setIsScanning(false); setProgress(100);
-    toast({ title: "Análise concluída", description: `Site ${mockResult.status === 'safe' ? 'seguro' : mockResult.status === 'danger' ? 'perigoso' : 'suspeito'} detectado`, variant: mockResult.status === 'danger' ? "destructive" : "default" });
+    setProgress(10);
+    try {
+      const { data, error } = await supabase.functions.invoke('scan-url', { body: { url: currentUrl } });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setProgress(100);
+      const vtStatus = data.status as 'safe' | 'danger' | 'warning';
+      const vtScore = data.score ?? 50;
+      const stats = data.stats || {};
+      const scanResult: ScanResult = {
+        url: currentUrl,
+        status: vtStatus,
+        score: vtScore,
+        checks: {
+          ssl: currentUrl.startsWith('https://'),
+          reputation: stats.malicious === 0,
+          malware: stats.malicious === 0,
+          phishing: stats.suspicious === 0,
+          redirects: true,
+          age: true,
+        },
+        details: {
+          domain: new URL(currentUrl).hostname,
+          title: 'Análise VirusTotal',
+          description: `${stats.malicious || 0} engines detectaram como malicioso, ${stats.suspicious || 0} como suspeito, de ${stats.total || 0} engines.`,
+          lastScan: new Date().toLocaleString('pt-BR'),
+        }
+      };
+      setResult(scanResult); setIsScanning(false);
+      toast({ title: "Análise concluída (VirusTotal)", description: `Site ${vtStatus === 'safe' ? 'seguro' : vtStatus === 'danger' ? 'perigoso' : 'suspeito'}`, variant: vtStatus === 'danger' ? "destructive" : "default" });
+    } catch (err: any) {
+      console.error('VirusTotal scan error:', err);
+      setIsScanning(false); setProgress(0);
+      toast({ title: "Erro na análise", description: err.message || "Falha ao consultar VirusTotal", variant: "destructive" });
+    }
   };
 
   const scanEmail = async () => {
