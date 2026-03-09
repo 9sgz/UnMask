@@ -72,19 +72,24 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
     }
     setProgress(10);
     try {
-      // Call both APIs in parallel
-      const [vtResponse, gsbResponse] = await Promise.allSettled([
+      const urlObj = new URL(currentUrl);
+      const domain = urlObj.hostname;
+
+      // Call all three APIs in parallel
+      const [vtResponse, gsbResponse, abuseResponse] = await Promise.allSettled([
         supabase.functions.invoke('scan-url', { body: { url: currentUrl } }),
         supabase.functions.invoke('safe-browsing', { body: { url: currentUrl } }),
+        supabase.functions.invoke('check-ip', { body: { ip: domain } }),
       ]);
 
       setProgress(80);
 
       const vtData = vtResponse.status === 'fulfilled' && !vtResponse.value.error ? vtResponse.value.data : null;
       const gsbData = gsbResponse.status === 'fulfilled' && !gsbResponse.value.error ? gsbResponse.value.data : null;
+      const abuseData = abuseResponse.status === 'fulfilled' && !abuseResponse.value.error ? abuseResponse.value.data : null;
 
-      if (!vtData && !gsbData) {
-        throw new Error('Ambas as APIs falharam. Tente novamente.');
+      if (!vtData && !gsbData && !abuseData) {
+        throw new Error('Todas as APIs falharam. Tente novamente.');
       }
 
       const vtStats = vtData?.stats || {};
@@ -97,16 +102,24 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
       const gsbUnwanted = gsbData?.details?.unwanted ?? false;
       const gsbStatus = gsbData?.status as 'safe' | 'danger' | 'warning' | undefined;
 
+      const abuseScore = abuseData?.abuseScore ?? null;
+      const abuseStatus = abuseData?.status as 'safe' | 'danger' | 'warning' | undefined;
+      const abuseIsp = abuseData?.isp;
+      const abuseCountry = abuseData?.country;
+      const abuseReports = abuseData?.totalReports ?? 0;
+
       // Combine: worst status wins
       let finalStatus: 'safe' | 'danger' | 'warning' = 'safe';
-      const statuses = [vtStatus, gsbStatus].filter(Boolean) as ('safe' | 'danger' | 'warning')[];
+      const statuses = [vtStatus, gsbStatus, abuseStatus].filter(Boolean) as ('safe' | 'danger' | 'warning')[];
       if (statuses.includes('danger')) finalStatus = 'danger';
       else if (statuses.includes('warning')) finalStatus = 'warning';
 
-      // Combine score: average VT score with GSB penalty
+      // Combine score: weighted average with penalties
       let finalScore = vtScore ?? 100;
       if (!gsbSafe) finalScore = Math.min(finalScore, 20);
       if (gsbUnwanted && gsbSafe) finalScore = Math.min(finalScore, 50);
+      if (abuseScore !== null && abuseScore > 60) finalScore = Math.min(finalScore, 30);
+      else if (abuseScore !== null && abuseScore > 20) finalScore = Math.min(finalScore, 60);
 
       setProgress(100);
 
