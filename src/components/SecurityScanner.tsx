@@ -72,38 +72,76 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
     }
     setProgress(10);
     try {
-      const { data, error } = await supabase.functions.invoke('scan-url', { body: { url: currentUrl } });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      // Call both APIs in parallel
+      const [vtResponse, gsbResponse] = await Promise.allSettled([
+        supabase.functions.invoke('scan-url', { body: { url: currentUrl } }),
+        supabase.functions.invoke('safe-browsing', { body: { url: currentUrl } }),
+      ]);
+
+      setProgress(80);
+
+      const vtData = vtResponse.status === 'fulfilled' && !vtResponse.value.error ? vtResponse.value.data : null;
+      const gsbData = gsbResponse.status === 'fulfilled' && !gsbResponse.value.error ? gsbResponse.value.data : null;
+
+      if (!vtData && !gsbData) {
+        throw new Error('Ambas as APIs falharam. Tente novamente.');
+      }
+
+      const vtStats = vtData?.stats || {};
+      const vtScore = vtData?.score ?? null;
+      const vtStatus = vtData?.status as 'safe' | 'danger' | 'warning' | undefined;
+
+      const gsbSafe = gsbData?.safe ?? true;
+      const gsbPhishing = gsbData?.details?.phishing ?? false;
+      const gsbMalware = gsbData?.details?.malware ?? false;
+      const gsbUnwanted = gsbData?.details?.unwanted ?? false;
+      const gsbStatus = gsbData?.status as 'safe' | 'danger' | 'warning' | undefined;
+
+      // Combine: worst status wins
+      let finalStatus: 'safe' | 'danger' | 'warning' = 'safe';
+      const statuses = [vtStatus, gsbStatus].filter(Boolean) as ('safe' | 'danger' | 'warning')[];
+      if (statuses.includes('danger')) finalStatus = 'danger';
+      else if (statuses.includes('warning')) finalStatus = 'warning';
+
+      // Combine score: average VT score with GSB penalty
+      let finalScore = vtScore ?? 100;
+      if (!gsbSafe) finalScore = Math.min(finalScore, 20);
+      if (gsbUnwanted && gsbSafe) finalScore = Math.min(finalScore, 50);
+
       setProgress(100);
-      const vtStatus = data.status as 'safe' | 'danger' | 'warning';
-      const vtScore = data.score ?? 50;
-      const stats = data.stats || {};
+
       const scanResult: ScanResult = {
         url: currentUrl,
-        status: vtStatus,
-        score: vtScore,
+        status: finalStatus,
+        score: finalScore,
         checks: {
           ssl: currentUrl.startsWith('https://'),
-          reputation: stats.malicious === 0,
-          malware: stats.malicious === 0,
-          phishing: stats.suspicious === 0,
-          redirects: true,
+          reputation: (vtStats.malicious ?? 0) === 0,
+          malware: (vtStats.malicious ?? 0) === 0 && !gsbMalware,
+          phishing: (vtStats.suspicious ?? 0) === 0 && !gsbPhishing,
+          redirects: !gsbUnwanted,
           age: true,
         },
         details: {
           domain: new URL(currentUrl).hostname,
-          title: 'Análise VirusTotal',
-          description: `${stats.malicious || 0} engines detectaram como malicioso, ${stats.suspicious || 0} como suspeito, de ${stats.total || 0} engines.`,
+          title: 'Análise Combinada',
+          description: [
+            vtData ? `VirusTotal: ${vtStats.malicious || 0} malicioso, ${vtStats.suspicious || 0} suspeito de ${vtStats.total || 0} engines.` : 'VirusTotal: indisponível.',
+            gsbData ? `Safe Browsing: ${gsbSafe ? 'Nenhuma ameaça' : `${gsbData.details?.totalThreats || 0} ameaça(s) — ${[gsbPhishing && 'phishing', gsbMalware && 'malware', gsbUnwanted && 'software indesejado'].filter(Boolean).join(', ')}`}.` : 'Safe Browsing: indisponível.',
+          ].join(' '),
           lastScan: new Date().toLocaleString('pt-BR'),
         }
       };
       setResult(scanResult); setIsScanning(false);
-      toast({ title: "Análise concluída (VirusTotal)", description: `Site ${vtStatus === 'safe' ? 'seguro' : vtStatus === 'danger' ? 'perigoso' : 'suspeito'}`, variant: vtStatus === 'danger' ? "destructive" : "default" });
+      toast({
+        title: "Análise concluída (VT + Safe Browsing)",
+        description: `Site ${finalStatus === 'safe' ? 'seguro' : finalStatus === 'danger' ? 'perigoso' : 'suspeito'}`,
+        variant: finalStatus === 'danger' ? "destructive" : "default",
+      });
     } catch (err: any) {
-      console.error('VirusTotal scan error:', err);
+      console.error('Scan error:', err);
       setIsScanning(false); setProgress(0);
-      toast({ title: "Erro na análise", description: err.message || "Falha ao consultar VirusTotal", variant: "destructive" });
+      toast({ title: "Erro na análise", description: err.message || "Falha ao consultar APIs", variant: "destructive" });
     }
   };
 
