@@ -448,11 +448,11 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
                     { icon: Lock, label: 'SSL/HTTPS', ok: result.checks.ssl },
-                    { icon: Globe, label: 'Reputação', ok: result.checks.reputation },
+                    { icon: Globe, label: 'Reputação VT', ok: result.checks.reputation },
                     { icon: Shield, label: 'Anti-Malware', ok: result.checks.malware },
                     { icon: Eye, label: 'Anti-Phishing', ok: result.checks.phishing },
-                    { icon: Zap, label: 'Redirecionamentos', ok: result.checks.redirects },
-                    { icon: Clock, label: 'Idade do Domínio', ok: result.checks.age },
+                    { icon: Zap, label: 'Safe Browsing', ok: result.checks.redirects },
+                    { icon: Target, label: 'IP AbuseIPDB', ok: result.checks.age },
                   ].map((check, i) => (
                     <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-background/20">
                       <check.icon className={`w-4 h-4 ${check.ok ? 'text-safe' : 'text-danger'}`} />
