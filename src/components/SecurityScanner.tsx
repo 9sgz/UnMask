@@ -72,19 +72,24 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
     }
     setProgress(10);
     try {
-      // Call both APIs in parallel
-      const [vtResponse, gsbResponse] = await Promise.allSettled([
+      const urlObj = new URL(currentUrl);
+      const domain = urlObj.hostname;
+
+      // Call all three APIs in parallel
+      const [vtResponse, gsbResponse, abuseResponse] = await Promise.allSettled([
         supabase.functions.invoke('scan-url', { body: { url: currentUrl } }),
         supabase.functions.invoke('safe-browsing', { body: { url: currentUrl } }),
+        supabase.functions.invoke('check-ip', { body: { ip: domain } }),
       ]);
 
       setProgress(80);
 
       const vtData = vtResponse.status === 'fulfilled' && !vtResponse.value.error ? vtResponse.value.data : null;
       const gsbData = gsbResponse.status === 'fulfilled' && !gsbResponse.value.error ? gsbResponse.value.data : null;
+      const abuseData = abuseResponse.status === 'fulfilled' && !abuseResponse.value.error ? abuseResponse.value.data : null;
 
-      if (!vtData && !gsbData) {
-        throw new Error('Ambas as APIs falharam. Tente novamente.');
+      if (!vtData && !gsbData && !abuseData) {
+        throw new Error('Todas as APIs falharam. Tente novamente.');
       }
 
       const vtStats = vtData?.stats || {};
@@ -97,16 +102,24 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
       const gsbUnwanted = gsbData?.details?.unwanted ?? false;
       const gsbStatus = gsbData?.status as 'safe' | 'danger' | 'warning' | undefined;
 
+      const abuseScore = abuseData?.abuseScore ?? null;
+      const abuseStatus = abuseData?.status as 'safe' | 'danger' | 'warning' | undefined;
+      const abuseIsp = abuseData?.isp;
+      const abuseCountry = abuseData?.country;
+      const abuseReports = abuseData?.totalReports ?? 0;
+
       // Combine: worst status wins
       let finalStatus: 'safe' | 'danger' | 'warning' = 'safe';
-      const statuses = [vtStatus, gsbStatus].filter(Boolean) as ('safe' | 'danger' | 'warning')[];
+      const statuses = [vtStatus, gsbStatus, abuseStatus].filter(Boolean) as ('safe' | 'danger' | 'warning')[];
       if (statuses.includes('danger')) finalStatus = 'danger';
       else if (statuses.includes('warning')) finalStatus = 'warning';
 
-      // Combine score: average VT score with GSB penalty
+      // Combine score: weighted average with penalties
       let finalScore = vtScore ?? 100;
       if (!gsbSafe) finalScore = Math.min(finalScore, 20);
       if (gsbUnwanted && gsbSafe) finalScore = Math.min(finalScore, 50);
+      if (abuseScore !== null && abuseScore > 60) finalScore = Math.min(finalScore, 30);
+      else if (abuseScore !== null && abuseScore > 20) finalScore = Math.min(finalScore, 60);
 
       setProgress(100);
 
@@ -116,11 +129,11 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
         score: finalScore,
         checks: {
           ssl: currentUrl.startsWith('https://'),
-          reputation: (vtStats.malicious ?? 0) === 0,
+          reputation: (vtStats.malicious ?? 0) === 0 && (abuseScore === null || abuseScore <= 60),
           malware: (vtStats.malicious ?? 0) === 0 && !gsbMalware,
           phishing: (vtStats.suspicious ?? 0) === 0 && !gsbPhishing,
           redirects: !gsbUnwanted,
-          age: true,
+          age: abuseScore === null || abuseScore <= 20,
         },
         details: {
           domain: new URL(currentUrl).hostname,
@@ -128,13 +141,14 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
           description: [
             vtData ? `VirusTotal: ${vtStats.malicious || 0} malicioso, ${vtStats.suspicious || 0} suspeito de ${vtStats.total || 0} engines.` : 'VirusTotal: indisponível.',
             gsbData ? `Safe Browsing: ${gsbSafe ? 'Nenhuma ameaça' : `${gsbData.details?.totalThreats || 0} ameaça(s) — ${[gsbPhishing && 'phishing', gsbMalware && 'malware', gsbUnwanted && 'software indesejado'].filter(Boolean).join(', ')}`}.` : 'Safe Browsing: indisponível.',
+            abuseData ? `AbuseIPDB: score ${abuseScore}/100${abuseIsp ? ` · ${abuseIsp}` : ''}${abuseCountry ? ` (${abuseCountry})` : ''} · ${abuseReports} report(s).` : 'AbuseIPDB: indisponível.',
           ].join(' '),
           lastScan: new Date().toLocaleString('pt-BR'),
         }
       };
       setResult(scanResult); setIsScanning(false);
       toast({
-        title: "Análise concluída (VT + Safe Browsing)",
+        title: "Análise concluída (VT + Safe Browsing + AbuseIPDB)",
         description: `Site ${finalStatus === 'safe' ? 'seguro' : finalStatus === 'danger' ? 'perigoso' : 'suspeito'}`,
         variant: finalStatus === 'danger' ? "destructive" : "default",
       });
@@ -434,11 +448,11 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
                     { icon: Lock, label: 'SSL/HTTPS', ok: result.checks.ssl },
-                    { icon: Globe, label: 'Reputação', ok: result.checks.reputation },
+                    { icon: Globe, label: 'Reputação VT', ok: result.checks.reputation },
                     { icon: Shield, label: 'Anti-Malware', ok: result.checks.malware },
                     { icon: Eye, label: 'Anti-Phishing', ok: result.checks.phishing },
-                    { icon: Zap, label: 'Redirecionamentos', ok: result.checks.redirects },
-                    { icon: Clock, label: 'Idade do Domínio', ok: result.checks.age },
+                    { icon: Zap, label: 'Safe Browsing', ok: result.checks.redirects },
+                    { icon: Target, label: 'IP AbuseIPDB', ok: result.checks.age },
                   ].map((check, i) => (
                     <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-background/20">
                       <check.icon className={`w-4 h-4 ${check.ok ? 'text-safe' : 'text-danger'}`} />
@@ -446,6 +460,11 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
                       {check.ok ? <CheckCircle className="w-4 h-4 text-safe" /> : <XCircle className="w-4 h-4 text-danger" />}
                     </div>
                   ))}
+                </div>
+
+                <div className="p-4 rounded-2xl bg-background/20 border border-border/30 text-xs text-muted-foreground leading-relaxed">
+                  <p className="font-medium text-foreground mb-1 text-sm">Detalhes da análise:</p>
+                  <p>{result.details.description}</p>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-background/20 border border-border/30">
