@@ -129,11 +129,11 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
         score: finalScore,
         checks: {
           ssl: currentUrl.startsWith('https://'),
-          reputation: (vtStats.malicious ?? 0) === 0,
+          reputation: (vtStats.malicious ?? 0) === 0 && (abuseScore === null || abuseScore <= 60),
           malware: (vtStats.malicious ?? 0) === 0 && !gsbMalware,
           phishing: (vtStats.suspicious ?? 0) === 0 && !gsbPhishing,
           redirects: !gsbUnwanted,
-          age: true,
+          age: abuseScore === null || abuseScore <= 20,
         },
         details: {
           domain: new URL(currentUrl).hostname,
@@ -141,13 +141,14 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
           description: [
             vtData ? `VirusTotal: ${vtStats.malicious || 0} malicioso, ${vtStats.suspicious || 0} suspeito de ${vtStats.total || 0} engines.` : 'VirusTotal: indisponível.',
             gsbData ? `Safe Browsing: ${gsbSafe ? 'Nenhuma ameaça' : `${gsbData.details?.totalThreats || 0} ameaça(s) — ${[gsbPhishing && 'phishing', gsbMalware && 'malware', gsbUnwanted && 'software indesejado'].filter(Boolean).join(', ')}`}.` : 'Safe Browsing: indisponível.',
+            abuseData ? `AbuseIPDB: score ${abuseScore}/100${abuseIsp ? ` · ${abuseIsp}` : ''}${abuseCountry ? ` (${abuseCountry})` : ''} · ${abuseReports} report(s).` : 'AbuseIPDB: indisponível.',
           ].join(' '),
           lastScan: new Date().toLocaleString('pt-BR'),
         }
       };
       setResult(scanResult); setIsScanning(false);
       toast({
-        title: "Análise concluída (VT + Safe Browsing)",
+        title: "Análise concluída (VT + Safe Browsing + AbuseIPDB)",
         description: `Site ${finalStatus === 'safe' ? 'seguro' : finalStatus === 'danger' ? 'perigoso' : 'suspeito'}`,
         variant: finalStatus === 'danger' ? "destructive" : "default",
       });
