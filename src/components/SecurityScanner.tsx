@@ -462,6 +462,11 @@ export const SecurityScanner = ({ initialUrl = '', extensionMode = false }: Secu
                   ))}
                 </div>
 
+                <div className="p-4 rounded-2xl bg-background/20 border border-border/30 text-xs text-muted-foreground leading-relaxed">
+                  <p className="font-medium text-foreground mb-1 text-sm">Detalhes da análise:</p>
+                  <p>{result.details.description}</p>
+                </div>
+
                 <div className="p-5 rounded-2xl bg-background/20 border border-border/30">
                   <h4 className="font-semibold mb-2">Recomendação:</h4>
                   <p className="text-sm leading-relaxed">
