@@ -129,9 +129,23 @@ export const CyberCrimeDashboard = () => {
         </div>
 
         <nav className="hidden md:flex items-center gap-6 text-xs tracking-widest text-muted-foreground uppercase">
-          <button className="text-primary border-b border-primary pb-1">Mapa</button>
-          <button className="hover:text-foreground transition-colors">Estatísticas</button>
-          <button className="hover:text-foreground transition-colors">Fonte de Dados</button>
+          {([
+            { key: 'map', label: 'Mapa' },
+            { key: 'stats', label: 'Estatísticas' },
+            { key: 'sources', label: 'Fonte de Dados' },
+          ] as { key: DashboardTab; label: string }[]).map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`pb-1 transition-colors ${
+                activeTab === tab.key
+                  ? 'text-primary border-b border-primary'
+                  : 'hover:text-foreground border-b border-transparent'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </nav>
 
         <div className="flex items-center gap-4">
