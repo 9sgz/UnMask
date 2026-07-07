@@ -74,6 +74,11 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
+  // Validate colors are CSS-safe to prevent style injection
+  const CSS_COLOR_REGEX = /^(#[0-9a-fA-F]{3,8}|rgb\(|rgba\(|hsl\(|hsla\(|var\(|[a-zA-Z]+)/
+  const isSafeColor = (color: string) =>
+    typeof color === "string" && color.length < 100 && CSS_COLOR_REGEX.test(color.trim())
+
   return (
     <style
       dangerouslySetInnerHTML={{
@@ -86,8 +91,10 @@ ${colorConfig
     const color =
       itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
       itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
+    if (!color || !isSafeColor(color)) return null
+    return `  --color-${key}: ${color};`
   })
+  .filter(Boolean)
   .join("\n")}
 }
 `
