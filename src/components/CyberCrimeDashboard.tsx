@@ -43,10 +43,13 @@ const mapCrimeToCategory = (crimeType: string): string => {
   return 'OAS';
 };
 
+type DashboardTab = 'map' | 'stats' | 'sources';
+
 export const CyberCrimeDashboard = () => {
   const [crimes, setCrimes] = useState<CyberCrime[]>([]);
   const [recentAttacks, setRecentAttacks] = useState<CyberCrime[]>([]);
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
+  const [activeTab, setActiveTab] = useState<DashboardTab>('map');
   const { requestNotificationPermission } = useRealtimeAlerts();
 
   useEffect(() => {
