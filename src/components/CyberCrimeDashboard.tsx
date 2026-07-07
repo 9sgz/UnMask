@@ -43,10 +43,13 @@ const mapCrimeToCategory = (crimeType: string): string => {
   return 'OAS';
 };
 
+type DashboardTab = 'map' | 'stats' | 'sources';
+
 export const CyberCrimeDashboard = () => {
   const [crimes, setCrimes] = useState<CyberCrime[]>([]);
   const [recentAttacks, setRecentAttacks] = useState<CyberCrime[]>([]);
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
+  const [activeTab, setActiveTab] = useState<DashboardTab>('map');
   const { requestNotificationPermission } = useRealtimeAlerts();
 
   useEffect(() => {
@@ -126,9 +129,23 @@ export const CyberCrimeDashboard = () => {
         </div>
 
         <nav className="hidden md:flex items-center gap-6 text-xs tracking-widest text-muted-foreground uppercase">
-          <button className="text-primary border-b border-primary pb-1">Mapa</button>
-          <button className="hover:text-foreground transition-colors">Estatísticas</button>
-          <button className="hover:text-foreground transition-colors">Fonte de Dados</button>
+          {([
+            { key: 'map', label: 'Mapa' },
+            { key: 'stats', label: 'Estatísticas' },
+            { key: 'sources', label: 'Fonte de Dados' },
+          ] as { key: DashboardTab; label: string }[]).map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`pb-1 transition-colors ${
+                activeTab === tab.key
+                  ? 'text-primary border-b border-primary'
+                  : 'hover:text-foreground border-b border-transparent'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </nav>
 
         <div className="flex items-center gap-4">
@@ -139,67 +156,74 @@ export const CyberCrimeDashboard = () => {
         </div>
       </header>
 
-      {/* Main Map Area */}
+      {/* Main Content Area */}
       <div className="flex-1 relative">
-        <div className="absolute inset-0">
-          <Suspense fallback={
-            <div className="w-full h-full flex items-center justify-center">
-              <Activity className="w-8 h-8 animate-spin text-primary" />
+        {activeTab === 'map' && (
+          <>
+            <div className="absolute inset-0">
+              <Suspense fallback={
+                <div className="w-full h-full flex items-center justify-center">
+                  <Activity className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              }>
+                <CyberAttackMap crimes={crimes} />
+              </Suspense>
             </div>
-          }>
-            <CyberAttackMap crimes={crimes} />
-          </Suspense>
-        </div>
 
-        {/* Right Side - Live Attack Feed */}
-        <div className="absolute top-4 right-4 z-10 w-72 max-h-[calc(100vh-180px)] overflow-hidden">
-          <div className="bg-card/80 backdrop-blur-md border border-border/30 rounded-lg overflow-hidden">
-            <div className="px-4 py-3 border-b border-border/30 flex items-center justify-between">
-              <span className="text-xs tracking-widest text-muted-foreground uppercase flex items-center gap-2">
-                <Zap className="w-3 h-3 text-primary" />
-                Ataques Recentes
-              </span>
-              <span className="text-xs text-primary font-mono">{activeCrimes.length}</span>
-            </div>
-            <div className="divide-y divide-border/20 max-h-80 overflow-y-auto scrollbar-thin">
-              {recentAttacks.map((attack) => (
-                <div key={attack.id} className="px-4 py-2.5 hover:bg-muted/30 transition-colors">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className={`text-xs font-semibold ${getSeverityColor(attack.severity)}`}>
-                      {attack.crime_type}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground/50 font-mono">{formatTime(attack.detected_at)}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground/60">
-                    <span>{attack.source_country || '??'}</span>
-                    <span className="text-primary">→</span>
-                    <span>{attack.target_country || '??'}</span>
-                  </div>
-                  {attack.ip_address && (
-                    <p className="text-[10px] text-muted-foreground/40 font-mono mt-0.5">{attack.ip_address}</p>
+            {/* Right Side - Live Attack Feed */}
+            <div className="absolute top-4 right-4 z-10 w-72 max-h-[calc(100vh-180px)] overflow-hidden">
+              <div className="bg-card/80 backdrop-blur-md border border-border/30 rounded-lg overflow-hidden">
+                <div className="px-4 py-3 border-b border-border/30 flex items-center justify-between">
+                  <span className="text-xs tracking-widest text-muted-foreground uppercase flex items-center gap-2">
+                    <Zap className="w-3 h-3 text-primary" />
+                    Ataques Recentes
+                  </span>
+                  <span className="text-xs text-primary font-mono">{activeCrimes.length}</span>
+                </div>
+                <div className="divide-y divide-border/20 max-h-80 overflow-y-auto scrollbar-thin">
+                  {recentAttacks.map((attack) => (
+                    <div key={attack.id} className="px-4 py-2.5 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`text-xs font-semibold ${getSeverityColor(attack.severity)}`}>
+                          {attack.crime_type}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground/50 font-mono">{formatTime(attack.detected_at)}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[11px] text-muted-foreground/60">
+                        <span>{attack.source_country || '??'}</span>
+                        <span className="text-primary">→</span>
+                        <span>{attack.target_country || '??'}</span>
+                      </div>
+                      {attack.ip_address && (
+                        <p className="text-[10px] text-muted-foreground/40 font-mono mt-0.5">{attack.ip_address}</p>
+                      )}
+                    </div>
+                  ))}
+                  {recentAttacks.length === 0 && (
+                    <div className="px-4 py-8 text-center text-muted-foreground/50 text-xs">
+                      Aguardando dados...
+                    </div>
                   )}
                 </div>
-              ))}
-              {recentAttacks.length === 0 && (
-                <div className="px-4 py-8 text-center text-muted-foreground/50 text-xs">
-                  Aguardando dados...
-                </div>
-              )}
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Left Side Stats */}
-        <div className="absolute top-4 left-4 z-10 space-y-3">
-          <div className="bg-card/80 backdrop-blur-md border border-border/30 rounded-lg px-4 py-3">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Ameaças Detectadas</div>
-            <div className="text-2xl font-bold text-primary font-mono">{crimes.length.toLocaleString()}</div>
-          </div>
-          <div className="bg-card/80 backdrop-blur-md border border-border/30 rounded-lg px-4 py-3">
-            <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Ataques Ativos</div>
-            <div className="text-2xl font-bold text-danger font-mono">{activeCrimes.length}</div>
-          </div>
-        </div>
+            {/* Left Side Stats */}
+            <div className="absolute top-4 left-4 z-10 space-y-3">
+              <div className="bg-card/80 backdrop-blur-md border border-border/30 rounded-lg px-4 py-3">
+                <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Ameaças Detectadas</div>
+                <div className="text-2xl font-bold text-primary font-mono">{crimes.length.toLocaleString()}</div>
+              </div>
+              <div className="bg-card/80 backdrop-blur-md border border-border/30 rounded-lg px-4 py-3">
+                <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Ataques Ativos</div>
+                <div className="text-2xl font-bold text-danger font-mono">{activeCrimes.length}</div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'stats' && <StatsPanel crimes={crimes} categoryCounts={categoryCounts} />}
+        {activeTab === 'sources' && <SourcesPanel crimes={crimes} />}
       </div>
 
       {/* Bottom Stats Bar */}
@@ -220,6 +244,133 @@ export const CyberCrimeDashboard = () => {
           ))}
         </div>
       </footer>
+    </div>
+  );
+};
+
+const StatsPanel = ({ crimes, categoryCounts }: { crimes: CyberCrime[]; categoryCounts: Record<string, number> }) => {
+  const severityCounts = crimes.reduce<Record<string, number>>((acc, c) => {
+    acc[c.severity] = (acc[c.severity] || 0) + 1;
+    return acc;
+  }, {});
+  const statusCounts = crimes.reduce<Record<string, number>>((acc, c) => {
+    acc[c.status] = (acc[c.status] || 0) + 1;
+    return acc;
+  }, {});
+  const targetCountries = Object.entries(
+    crimes.reduce<Record<string, number>>((acc, c) => {
+      const k = c.target_country || 'Desconhecido';
+      acc[k] = (acc[k] || 0) + 1;
+      return acc;
+    }, {})
+  )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+  const maxCat = Math.max(1, ...Object.values(categoryCounts));
+
+  return (
+    <div className="absolute inset-0 overflow-y-auto p-6 space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total', value: crimes.length, color: 'text-primary' },
+          { label: 'Críticas', value: severityCounts.critical || 0, color: 'text-danger' },
+          { label: 'Altas', value: severityCounts.high || 0, color: 'text-warning' },
+          { label: 'Ativas', value: statusCounts.active || 0, color: 'text-danger' },
+        ].map((s) => (
+          <div key={s.label} className="bg-card/80 backdrop-blur-md border border-border/30 rounded-lg px-4 py-4">
+            <div className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">{s.label}</div>
+            <div className={`text-3xl font-bold font-mono ${s.color}`}>{s.value.toLocaleString()}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-card/80 backdrop-blur-md border border-border/30 rounded-lg p-5">
+          <h3 className="text-xs tracking-widest uppercase text-muted-foreground mb-4 flex items-center gap-2">
+            <Activity className="w-3 h-3 text-primary" /> Categorias de Ameaça
+          </h3>
+          <div className="space-y-3">
+            {THREAT_CATEGORIES.map((cat) => {
+              const v = categoryCounts[cat.key] || 0;
+              return (
+                <div key={cat.key}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-bold" style={{ color: cat.color }}>{cat.label}</span>
+                    <span className="font-mono text-muted-foreground">{v}</span>
+                  </div>
+                  <div className="h-2 rounded bg-muted/30 overflow-hidden">
+                    <div
+                      className="h-full rounded transition-all"
+                      style={{ width: `${(v / maxCat) * 100}%`, backgroundColor: cat.color }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="bg-card/80 backdrop-blur-md border border-border/30 rounded-lg p-5">
+          <h3 className="text-xs tracking-widest uppercase text-muted-foreground mb-4 flex items-center gap-2">
+            <Globe className="w-3 h-3 text-primary" /> Top Países Alvo
+          </h3>
+          <div className="space-y-2">
+            {targetCountries.length === 0 && (
+              <p className="text-xs text-muted-foreground/60">Sem dados ainda.</p>
+            )}
+            {targetCountries.map(([country, count]) => (
+              <div key={country} className="flex items-center justify-between text-xs py-1.5 border-b border-border/20 last:border-0">
+                <span className="text-foreground/80">{country}</span>
+                <span className="font-mono text-primary">{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SourcesPanel = ({ crimes }: { crimes: CyberCrime[] }) => {
+  const sources = [
+    { name: 'Kaspersky Threat Intel', type: 'Malware & AV', status: 'active' },
+    { name: 'AbuseIPDB', type: 'Reputação de IPs', status: 'active' },
+    { name: 'PhishTank', type: 'Phishing', status: 'active' },
+    { name: 'OpenPhish Feed', type: 'Phishing URLs', status: 'active' },
+    { name: 'AlienVault OTX', type: 'IOCs', status: 'active' },
+    { name: 'Lovable Cloud Realtime', type: 'Eventos Internos', status: 'active' },
+  ];
+
+  return (
+    <div className="absolute inset-0 overflow-y-auto p-6 space-y-6">
+      <div className="bg-card/80 backdrop-blur-md border border-border/30 rounded-lg p-5">
+        <h3 className="text-xs tracking-widest uppercase text-muted-foreground mb-4 flex items-center gap-2">
+          <Eye className="w-3 h-3 text-primary" /> Fontes de Dados Ativas
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {sources.map((src) => (
+            <div key={src.name} className="flex items-center justify-between p-3 rounded border border-border/30 bg-background/40">
+              <div>
+                <div className="text-sm font-semibold text-foreground">{src.name}</div>
+                <div className="text-[11px] text-muted-foreground">{src.type}</div>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-safe">
+                <div className="w-2 h-2 rounded-full bg-safe animate-pulse" />
+                {src.status}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-card/80 backdrop-blur-md border border-border/30 rounded-lg p-5">
+        <h3 className="text-xs tracking-widest uppercase text-muted-foreground mb-4 flex items-center gap-2">
+          <AlertTriangle className="w-3 h-3 text-warning" /> Ingestão Recente
+        </h3>
+        <div className="text-xs text-muted-foreground">
+          {crimes.length.toLocaleString()} eventos processados nesta sessão.
+        </div>
+      </div>
     </div>
   );
 };
